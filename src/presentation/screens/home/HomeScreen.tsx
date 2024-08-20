@@ -56,9 +56,9 @@ export const HomeScreen = () => {
     setIsComputing(true);
 
     // Convert inputs to numbers
-    const P = parseFloat(amount);
-    // const r = (1 + parseFloat(interestRate) / 100)  getPeriodsPerYear(periodicity);
-    const base = 1 + parseFloat(interestRate) / 100;
+    const amountClean = amount.replace(/[,.]/g, '');
+    const P = parseFloat(amountClean);
+    const base = 1 + (parseFloat(interest) / 100);
     const potencia = 1 / getPeriodsPerYear(periodicity);
     const r = Math.pow(base, potencia);
     const n = parseInt(duration, 10);
@@ -67,6 +67,7 @@ export const HomeScreen = () => {
     const C = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
 
     console.log(getPeriodsPerYear(periodicity));
+    console.log({n, P, r, base, potencia, interest, amount});
 
     // Initialize balance
     let balance = P;
@@ -84,6 +85,7 @@ export const HomeScreen = () => {
         interest: interestCalc.toFixed(2),
         balance: balance.toFixed(2),
       });
+      // console.log({amortizationEntries});
     }
 
     // Update state with the complete amortization data
