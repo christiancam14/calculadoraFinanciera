@@ -1,11 +1,11 @@
 import 'react-native-gesture-handler';
 
 import {useColorScheme} from 'react-native';
-import {StackNavigator} from './presentation/routes/StackNavigator';
 import {NavigationContainer} from '@react-navigation/native';
 import * as eva from '@eva-design/eva';
 import {EvaIconsPack} from '@ui-kitten/eva-icons';
 import {ApplicationProvider, IconRegistry} from '@ui-kitten/components';
+import {DrawerNagivator} from './presentation/routes/DrawerNagivator';
 
 export const simulatorApp = () => {
   const colorScheme = useColorScheme();
@@ -31,7 +31,8 @@ export const simulatorApp = () => {
               notification: theme['color-primary-500'],
             },
           }}>
-          <StackNavigator />
+          <DrawerNagivator />
+          {/* <StackNavigator /> */}
         </NavigationContainer>
       </ApplicationProvider>
     </>

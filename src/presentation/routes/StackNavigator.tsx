@@ -3,7 +3,7 @@ import {
   StackCardStyleInterpolator,
 } from '@react-navigation/stack';
 import {HomeScreen} from '../screens/home/HomeScreen';
-import { SimulationScreen } from '../screens/simulation/SimulationScreen';
+import {SimulationScreen} from '../screens/simulation/SimulationScreen';
 import {LoadingScreen} from '../screens/loading/LoadingScreen';
 
 export type RootStackParams = {
@@ -24,7 +24,11 @@ const fadeAnimation: StackCardStyleInterpolator = ({current}) => {
 
 export const StackNavigator = () => {
   return (
-    <Stack.Navigator initialRouteName="HomeScreen">
+    <Stack.Navigator
+      initialRouteName="HomeScreen"
+      screenOptions={{
+        headerShown: false,
+      }}>
       <Stack.Screen
         name="LoadingScreen"
         component={LoadingScreen}
