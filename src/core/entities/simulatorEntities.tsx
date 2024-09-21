@@ -1,4 +1,9 @@
-export type Periodicity = 'Diaria' | 'Semanal' | 'Quincenal' | 'Mensual' | 'Anual';
+export type Periodicity =
+  | 'Diaria'
+  | 'Semanal'
+  | 'Quincenal'
+  | 'Mensual'
+  | 'Anual';
 
 export const PeriodicityData: Periodicity[] = [
   'Diaria',
@@ -10,11 +15,16 @@ export const PeriodicityData: Periodicity[] = [
 
 export type Interest = 'Mensual' | 'Efectivo Anual' | 'Nominal Anual';
 
-export const InterestData: Interest[] = ['Mensual', 'Efectivo Anual', 'Nominal Anual'];
+export const InterestData: Interest[] = [
+  'Mensual',
+  'Efectivo Anual',
+  'Nominal Anual',
+];
 
 export interface AmortizationEntry {
-  period: number;
-  principal: string;
-  interest: string;
-  balance: string;
+  periodo: number; // El número del periodo (por ejemplo, el mes o año correspondiente)
+  principal: string; // Cantidad de dinero destinada a reducir el capital del préstamo
+  interes: string; // Cantidad de dinero pagada en concepto de intereses en el periodo
+  saldo: string; // El saldo restante del préstamo después del pago
+  cuota: string; // El valor total del pago (cuota) en ese periodo
 }

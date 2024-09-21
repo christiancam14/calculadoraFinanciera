@@ -19,8 +19,9 @@ import {
   Periodicity,
   PeriodicityData,
 } from '../../../core/entities/simulatorEntities';
-import {formatAsCurrency} from '../../../config/helpers/formatAsCurrency';
+// import {formatAsCurrency} from '../../../config/helpers/formatAsCurrency';
 import {MainLayout} from '../../layouts/MainLayour';
+import {calculateAmortization} from '../../../config/helpers/calculateAmortization';
 
 export const HomeScreen = () => {
   // const [amount, setAmount] = useState('');
@@ -40,60 +41,24 @@ export const HomeScreen = () => {
   );
   const [isComputing, setIsComputing] = useState(false);
 
-  const calculateAmortization = () => {
+  const handleCalculateAmortization = () => {
     setIsComputing(true);
 
-    // Convert inputs to numbers
-    const amountClean = amount.replace(/[,.]/g, '');
-    const P = parseFloat(amountClean);
-    const base = 1 + parseFloat(interest) / 100;
-    const potencia = 1 / getPeriodsPerYear(periodicity);
-    const r = Math.pow(base, potencia);
-    const n = parseInt(duration, 10);
+    // Convertir valores de strings a números
+    const P0 = parseFloat(amount.replace(/,/g, '')); // Monto del crédito
+    const tasaInteres = parseFloat(interest) / 100; // Tasa de interés
+    const nPeriodos = parseInt(duration, 10); // Número de periodos del préstamo
 
-    // Calculate monthly payment
-    const monthlyPayment =
-      (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+    // Calcular la amortización usando la función externa
+    const entries = calculateAmortization(
+      P0,
+      tasaInteres,
+      nPeriodos,
+      // periodicity,
+    );
 
-    // Initialize balance
-    let balance = P;
-    const amortizationEntries: AmortizationEntry[] = [];
-
-    // Generate amortization data
-    for (let i = 0; i < n; i++) {
-      const interestPayment = balance * r;
-      const principalPayment = monthlyPayment - interestPayment;
-      balance -= principalPayment;
-
-      amortizationEntries.push({
-        period: i + 1,
-        principal: `${formatAsCurrency(Math.trunc(principalPayment))}`,
-        interest: `${formatAsCurrency(Math.trunc(interestPayment))}`,
-        balance: `${formatAsCurrency(Math.trunc(balance))}`,
-      });
-    }
-
-    // Update state with the complete amortization data
-    setAmortizationData(amortizationEntries);
-
+    setAmortizationData(entries);
     setIsComputing(false);
-  };
-
-  const getPeriodsPerYear = (periodicityUser: Periodicity) => {
-    switch (periodicityUser) {
-      case 'Diaria':
-        return 365;
-      case 'Semanal':
-        return 52;
-      case 'Quincenal':
-        return 26;
-      case 'Mensual':
-        return 12;
-      case 'Anual':
-        return 1;
-      default:
-        return 12;
-    }
   };
 
   const renderOption = (title: string) => (
@@ -197,13 +162,14 @@ export const HomeScreen = () => {
             <Button
               style={styles.btnCalculate}
               disabled={isComputing}
-              onPress={calculateAmortization}>
+              onPress={handleCalculateAmortization}>
               Calcular Amortización
             </Button>
 
             <View style={{height: 20}} />
 
             <AmortizationTable data={amortizationData} />
+            <View style={{height: 60}} />
           </View>
         </ScrollView>
       </MainLayout>

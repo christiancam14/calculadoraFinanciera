@@ -9,16 +9,28 @@ interface AmortizationTableProps {
 }
 
 export const AmortizationTable = ({data}: AmortizationTableProps) => {
+  if (!Array.isArray(data) || data.length === 0) {
+    return <Text>No hay datos para mostrar.</Text>;
+  }
+
   const parseCurrency = (value: string) => {
     return parseFloat(value.replace(/[$,]/g, ''));
   };
 
   const totalPrincipal = data.reduce(
-    (acc, item) => acc + parseCurrency(item.principal),
+    (acc, item) =>
+      acc +
+      (typeof item.principal === 'number'
+        ? item.principal
+        : parseCurrency(item.principal)),
     0,
   );
   const totalInterest = data.reduce(
-    (acc, item) => acc + parseCurrency(item.interest),
+    (acc, item) =>
+      acc +
+      (typeof item.interes === 'number'
+        ? item.interes
+        : parseCurrency(item.interes)),
     0,
   );
 
@@ -26,34 +38,34 @@ export const AmortizationTable = ({data}: AmortizationTableProps) => {
     <Layout style={{width: '100%'}}>
       <Layout style={styles.tableContainer}>
         <Layout style={styles.tableRow}>
-          <Text style={[styles.tableHeader]}>Periodo</Text>
-          <Text style={[styles.tableHeader, {flex: 3}]}>Capital</Text>
-          <Text style={[styles.tableHeader, {flex: 3}]}>Interés</Text>
-          <Text style={[styles.tableHeader, {flex: 3}]}>Saldo</Text>
+          <Text style={styles.tableHeader}>No.</Text>
+          <Text style={[styles.tableHeader, {flex: 4}]}>Capital</Text>
+          <Text style={[styles.tableHeader, {flex: 4}]}>Interés</Text>
+          <Text style={[styles.tableHeader, {flex: 4}]}>Saldo</Text>
         </Layout>
         <Divider />
-        {data.map((item, index) => (
-          <React.Fragment key={index}>
+        {data.map(item => (
+          <React.Fragment key={item.periodo}>
             <Layout style={styles.tableRow}>
-              <Text style={[styles.tableCell]}>{item.period}</Text>
-              <Text style={[styles.tableCell, {flex: 3}]}>
+              <Text style={styles.tableCell}>{item.periodo}</Text>
+              <Text style={[styles.tableCell, {flex: 4}]}>
                 {item.principal}
               </Text>
-              <Text style={[styles.tableCell, {flex: 3}]}>{item.interest}</Text>
-              <Text style={[styles.tableCell, {flex: 3}]}>{item.balance}</Text>
+              <Text style={[styles.tableCell, {flex: 4}]}>{item.interes}</Text>
+              <Text style={[styles.tableCell, {flex: 4}]}>{item.saldo}</Text>
             </Layout>
             <Divider />
           </React.Fragment>
         ))}
         <Layout style={[styles.tableRow, {marginTop: 10}]}>
           <Text style={[styles.tableCell, {fontWeight: '900'}]}>Total</Text>
-          <Text style={[styles.tableCell, {flex: 3}]}>
+          <Text style={[styles.tableCell, {flex: 4}]}>
             {formatAsCurrency(totalPrincipal)}
           </Text>
-          <Text style={[styles.tableCell, {flex: 3}]}>
+          <Text style={[styles.tableCell, {flex: 4}]}>
             {formatAsCurrency(totalInterest)}
           </Text>
-          <Text style={[styles.tableCell, {flex: 3}]}>
+          <Text style={[styles.tableCell, {flex: 4}]}>
             {formatAsCurrency(totalPrincipal + totalInterest)}
           </Text>
         </Layout>
@@ -63,8 +75,7 @@ export const AmortizationTable = ({data}: AmortizationTableProps) => {
 };
 
 const styles = StyleSheet.create({
-  tableContainer: {
-  },
+  tableContainer: {},
   tableRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -76,7 +87,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     flex: 2,
     textAlign: 'center',
-    // backgroundColor: 'red',
   },
   tableCell: {
     flex: 2,
