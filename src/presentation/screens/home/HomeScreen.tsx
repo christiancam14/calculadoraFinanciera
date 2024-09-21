@@ -111,6 +111,7 @@ export const HomeScreen = () => {
             backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.8)'}}>
             <Spinner status="info" size="large" />
           </Modal>
+
           <View style={{paddingVertical: 20, paddingHorizontal: 10}}>
             <Text
               category="h5"
