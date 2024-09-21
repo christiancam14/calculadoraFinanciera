@@ -21,7 +21,7 @@ import {
 } from '../../../core/entities/simulatorEntities';
 // import {formatAsCurrency} from '../../../config/helpers/formatAsCurrency';
 import {MainLayout} from '../../layouts/MainLayour';
-import {calculateAmortization} from '../../../config/helpers/calculateAmortization';
+import {calculateAmortizationEA} from '../../../config/helpers/calculateAmortization';
 
 export const HomeScreen = () => {
   // const [amount, setAmount] = useState('');
@@ -50,7 +50,7 @@ export const HomeScreen = () => {
     const nPeriodos = parseInt(duration, 10); // Número de periodos del préstamo
 
     // Calcular la amortización usando la función externa
-    const entries = calculateAmortization(
+    const entries = calculateAmortizationEA(
       P0,
       tasaInteres,
       nPeriodos,

@@ -1,7 +1,7 @@
 import { AmortizationEntry } from '../../core/entities/simulatorEntities';
 import { formatAsCurrency } from '../../config/helpers/formatAsCurrency';
 
-export const calculateAmortization = (
+export const calculateAmortizationEA = (
   amount: number,
   interestRate: number,
   duration: number,

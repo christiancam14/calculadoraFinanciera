@@ -25,6 +25,7 @@ export const DrawerNagivator = () => {
       screenOptions={{
         headerStyle: {
           backgroundColor: backgroundColor,
+          display: 'none'
         },
         headerTitleStyle: {
           color: fontColor,
