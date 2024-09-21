@@ -54,6 +54,18 @@ react {
     autolinkLibrariesWithApp()
 }
 
+buildscript {
+    ext.kotlin_version = '1.6.10' // Asegúrate de usar una versión compatible
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        // Otras dependencias del proyecto
+    }
+}
+
 /**
  * Set this to true to Run Proguard on Release builds to minify the Java bytecode.
  */
@@ -109,7 +121,10 @@ android {
 
 dependencies {
     // The version of react-native is set by the React Native Gradle Plugin
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+
     implementation("com.facebook.react:react-android")
+    implementation project(':notifee_react-native')
 
     if (hermesEnabled.toBoolean()) {
         implementation("com.facebook.react:hermes-android")

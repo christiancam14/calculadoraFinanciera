@@ -7,7 +7,9 @@ import {EvaIconsPack} from '@ui-kitten/eva-icons';
 import {ApplicationProvider, IconRegistry} from '@ui-kitten/components';
 import {DrawerNagivator} from './presentation/routes/DrawerNagivator';
 import {useEffect} from 'react';
+import notifee from '@notifee/react-native';
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function requestNotificationPermission() {
   if (Platform.OS === 'android' && Platform.Version >= 33) {
     try {
@@ -32,15 +34,15 @@ async function requestNotificationPermission() {
 
 export const simulatorApp = () => {
   useEffect(() => {
-    // Llama a la función para solicitar permisos
-    requestNotificationPermission().then(granted => {
-      if (granted) {
-        console.log('Permiso de notificaciones concedido');
-        // Aquí puedes agregar cualquier configuración adicional de notificaciones
-      } else {
-        console.log('Permiso de notificaciones denegado');
+    // Solicitar permiso para enviar notificaciones
+    async function requestUserPermission() {
+      const authStatus = await notifee.requestPermission();
+      if (authStatus.authorizationStatus !== 1) {
+        console.log('Permission not granted');
       }
-    });
+    }
+
+    requestUserPermission();
   }, []);
 
   const colorScheme = useColorScheme();
@@ -67,6 +69,7 @@ export const simulatorApp = () => {
             },
           }}>
           <DrawerNagivator />
+
           {/* <StackNavigator /> */}
         </NavigationContainer>
       </ApplicationProvider>
