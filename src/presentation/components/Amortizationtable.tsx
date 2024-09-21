@@ -1,19 +1,27 @@
 import React from 'react';
 import {Layout, Text, Divider} from '@ui-kitten/components';
 import {StyleSheet} from 'react-native';
-
-interface AmortizationEntry {
-  period: number;
-  principal: string;
-  interest: string;
-  balance: string;
-}
+import {AmortizationEntry} from '../../core/entities/simulatorEntities';
+import {formatAsCurrency} from '../../config/helpers/formatAsCurrency';
 
 interface AmortizationTableProps {
   data: AmortizationEntry[];
 }
 
 export const AmortizationTable = ({data}: AmortizationTableProps) => {
+  const parseCurrency = (value: string) => {
+    return parseFloat(value.replace(/[$,]/g, ''));
+  };
+
+  const totalPrincipal = data.reduce(
+    (acc, item) => acc + parseCurrency(item.principal),
+    0,
+  );
+  const totalInterest = data.reduce(
+    (acc, item) => acc + parseCurrency(item.interest),
+    0,
+  );
+
   return (
     <Layout style={{width: '100%'}}>
       <Layout style={styles.tableContainer}>
@@ -28,13 +36,27 @@ export const AmortizationTable = ({data}: AmortizationTableProps) => {
           <React.Fragment key={index}>
             <Layout style={styles.tableRow}>
               <Text style={[styles.tableCell]}>{item.period}</Text>
-              <Text style={[styles.tableCell, {flex: 3}]}>{item.principal}</Text>
+              <Text style={[styles.tableCell, {flex: 3}]}>
+                {item.principal}
+              </Text>
               <Text style={[styles.tableCell, {flex: 3}]}>{item.interest}</Text>
               <Text style={[styles.tableCell, {flex: 3}]}>{item.balance}</Text>
             </Layout>
             <Divider />
           </React.Fragment>
         ))}
+        <Layout style={[styles.tableRow, {marginTop: 10}]}>
+          <Text style={[styles.tableCell, {fontWeight: '900'}]}>Total</Text>
+          <Text style={[styles.tableCell, {flex: 3}]}>
+            {formatAsCurrency(totalPrincipal)}
+          </Text>
+          <Text style={[styles.tableCell, {flex: 3}]}>
+            {formatAsCurrency(totalInterest)}
+          </Text>
+          <Text style={[styles.tableCell, {flex: 3}]}>
+            {formatAsCurrency(totalPrincipal + totalInterest)}
+          </Text>
+        </Layout>
       </Layout>
     </Layout>
   );
@@ -42,7 +64,6 @@ export const AmortizationTable = ({data}: AmortizationTableProps) => {
 
 const styles = StyleSheet.create({
   tableContainer: {
-    backgroundColor: 'green',
   },
   tableRow: {
     flexDirection: 'row',
@@ -62,4 +83,3 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
 });
-
