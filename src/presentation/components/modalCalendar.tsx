@@ -6,9 +6,10 @@ import * as eva from '@eva-design/eva';
 
 interface Props {
   handleSchedule: (date: Date) => void;
+  handleToggleModal: () => void;
 }
 
-export const ModalCalendar = ({handleSchedule}: Props) => {
+export const ModalCalendar = ({handleSchedule, handleToggleModal}: Props) => {
   const [date, setDate] = useState(new Date());
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? eva.dark : eva.light;
@@ -36,13 +37,26 @@ export const ModalCalendar = ({handleSchedule}: Props) => {
           ]}>
           Agregar recordatorio
         </Text>
-        <Calendar date={date} onSelect={nextDate => setDate(nextDate)} style={{width: '100%'}} />
-        <Button
-          onPress={() => handleSchedule(date)}
-          style={{marginTop: 36}}
-          disabled={false}>
-          Guardar
-        </Button>
+        <Calendar
+          date={date}
+          onSelect={nextDate => setDate(nextDate)}
+          style={{width: '100%'}}
+        />
+
+        <Layout style={{display: 'flex', flexDirection: 'row', gap: 12}}>
+          <Button
+            onPress={handleToggleModal}
+            style={{marginTop: 36, flex: 1}}
+            disabled={false}>
+            Salir
+          </Button>
+          <Button
+            onPress={() => handleSchedule(date)}
+            style={{marginTop: 36, flex: 1}}
+            disabled={false}>
+            Guardar
+          </Button>
+        </Layout>
       </Layout>
     </>
   );

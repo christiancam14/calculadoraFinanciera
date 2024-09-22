@@ -149,7 +149,7 @@ export const AmortizationTable = ({
           style={{display: 'flex', flexDirection: 'column', marginBottom: 12}}>
           <Text style={{flex: 1, textAlign: 'center'}}>Monto</Text>
           <Text style={{flex: 1, textAlign: 'center'}}>
-            {formatAsCurrency(parseFloat(simulationData.value))!}
+            {formatAsCurrency(parseFloat(simulationData.value!))!}
           </Text>
         </Layout>
         <Layout style={{display: 'flex', flexDirection: 'row'}}>

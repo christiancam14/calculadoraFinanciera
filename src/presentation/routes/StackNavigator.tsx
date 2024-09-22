@@ -10,7 +10,10 @@ import {Simulation} from '../../core/entities/simulatorEntities';
 export type RootStackParams = {
   LoadingScreen: undefined;
   SimulationScreen: {productId: string};
-  SimulationDetails: {simulation: Simulation};
+  SimulationDetails: {
+    simulation: Simulation;
+    onDelete: (simulationId: string) => void;
+  };
 };
 
 const Stack = createStackNavigator<RootStackParams>();

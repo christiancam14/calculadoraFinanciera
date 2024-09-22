@@ -1,18 +1,18 @@
-import {RouteProp} from '@react-navigation/native';
-import {
-  StyleSheet,
-  Text,
-  ScrollView,
-} from 'react-native';
+import {NavigationProp, RouteProp} from '@react-navigation/native';
+import {StyleSheet, Text, ScrollView, useColorScheme} from 'react-native';
 import {Simulation} from '../../../core/entities/simulatorEntities';
 import {Button, Layout, Modal} from '@ui-kitten/components';
 import {AmortizationTable} from '../../components/Amortizationtable';
 import {MyIcon} from '../../components/ui/MyIcon';
-import {useState} from 'react';
+import {useEffect, useState} from 'react';
 import {ModalCalendar} from '../../components/modalCalendar';
+import * as eva from '@eva-design/eva';
 
 type RootStackParamList = {
-  SimulationDetails: {simulation: Simulation};
+  SimulationDetails: {
+    simulation: Simulation;
+    onDelete: (simulationId: string) => void;
+  };
 };
 
 type SimulationDetailsRouteProp = RouteProp<
@@ -20,16 +20,28 @@ type SimulationDetailsRouteProp = RouteProp<
   'SimulationDetails'
 >;
 
+type SimulationDetailsProps = {
+  route: SimulationDetailsRouteProp;
+  navigation: NavigationProp<RootStackParamList>;
+};
+
 export const SimulationDetails = ({
   route,
-}: {
-  route: SimulationDetailsRouteProp;
-}) => {
+  navigation,
+}: SimulationDetailsProps) => {
   const [isScheduling, setIsScheduling] = useState(false);
-  const {simulation} = route.params;
+  const [isDeleting, setIsDeleting] = useState(false);
+  const {simulation, onDelete} = route.params;
+
+  const colorScheme = useColorScheme();
+  const theme = colorScheme === 'dark' ? eva.dark : eva.light;
 
   const handleModal = () => {
     setIsScheduling(prev => !prev);
+  };
+
+  const handleModalDelete = () => {
+    setIsDeleting(prev => !prev);
   };
 
   const handleSchedule = (date: Date) => {
@@ -37,13 +49,38 @@ export const SimulationDetails = ({
     setIsScheduling(prev => !prev);
   };
 
+  const handleDelete = () => {
+    onDelete(simulation.id); // Llamar a la función onDelete con el ID de la simulación
+    navigation.goBack();
+    setIsDeleting(false);
+  };
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <Button onPress={handleModalDelete} appearance="ghost">
+          Eliminar
+        </Button>
+      ),
+    });
+  }, [navigation]);
+
   return (
     <Layout style={styles.container}>
       <Modal
         visible={isScheduling}
         style={styles.modalContainer}
         backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.8)'}}>
-        {/* <Layout
+        <ModalCalendar
+          handleSchedule={handleSchedule}
+          handleToggleModal={() => setIsScheduling(prev => !prev)}
+        />
+      </Modal>
+      <Modal
+        visible={isDeleting}
+        style={styles.modalContainer}
+        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.8)'}}>
+        <Layout
           style={[
             styles.modalContent,
             {
@@ -54,33 +91,36 @@ export const SimulationDetails = ({
             },
           ]}>
           <Text
-            style={[
-              {
-                color: theme['color-basic-color'],
-                marginBottom: 12,
-                textAlign: 'center',
-                fontSize: 16,
-                fontWeight: 800,
-              },
-            ]}>
-            Agregar recordatorio
+            style={{
+              color: theme['color-basic-color'],
+              marginBottom: 12,
+              paddingHorizontal: 12,
+              textAlign: 'center',
+              fontSize: 16,
+              fontWeight: '800',
+            }}>
+            ¿Estás seguro que deseas eliminar esta simulación?
           </Text>
-          <Button
-            onPress={handleSchedule}
-            style={{marginTop: 36}}
-            disabled={false}>
-            Guardar
-          </Button>
-        </Layout> */}
-
-        <ModalCalendar handleSchedule={handleSchedule} />
+          <Layout style={{flexDirection: 'row', gap: 12}}>
+            <Button
+              onPress={handleModalDelete}
+              style={{marginTop: 36, flex: 1}}>
+              Salir
+            </Button>
+            <Button
+              onPress={handleDelete}
+              style={{marginTop: 36, flex: 1, backgroundColor: '#DD4B39'}}>
+              Eliminar
+            </Button>
+          </Layout>
+        </Layout>
       </Modal>
       <ScrollView style={{width: '100%'}}>
         <Text
           style={{
             fontSize: 16,
             textAlign: 'center',
-            fontWeight: 800,
+            fontWeight: '800',
             marginBottom: 16,
           }}>
           {simulation.nombre}
@@ -90,8 +130,10 @@ export const SimulationDetails = ({
           simulationData={simulation.simulationData}
         />
       </ScrollView>
-      <Button style={styles.floatingButton} onPress={handleModal}>
-        {/* Volver */}
+      <Button style={styles.floatingButton} onPress={handleModalDelete}>
+        <MyIcon name="trash-2-outline" color="white" />
+      </Button>
+      <Button style={styles.floatingButtonSchedule} onPress={handleModal}>
         <MyIcon name="calendar-outline" color="white" />
       </Button>
     </Layout>
@@ -105,19 +147,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
   },
-
   floatingButton: {
     position: 'absolute',
+    backgroundColor: '#DD4B39',
     bottom: 20,
     right: 20,
     padding: 10,
   },
-  toggleBtn: {
-    display: 'none',
+  floatingButtonSchedule: {
+    position: 'absolute',
+    bottom: 20,
+    right: 80,
+    padding: 10,
   },
   modalContainer: {
     width: '100%',
-    marginHorizontal: 'auto',
     alignSelf: 'center',
   },
   modalContent: {
@@ -127,36 +171,5 @@ const styles = StyleSheet.create({
     width: '80%',
     alignSelf: 'center',
     borderRadius: 6,
-  },
-  modalText: {
-    color: 'white',
-  },
-  contBtn: {
-    paddingVertical: 20,
-  },
-  btnGuardar: {width: 210, alignSelf: 'center'},
-  tableContainer: {},
-  header: {
-    paddingVertical: 20,
-    backgroundColor: 'rgba(128, 128, 128, 0.05)',
-  },
-  rowColor: {
-    backgroundColor: 'rgba(128, 128, 128, 0.025)',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 8,
-    display: 'flex',
-    gap: 4,
-  },
-  tableHeader: {
-    fontWeight: 'bold',
-    flex: 2,
-    textAlign: 'center',
-  },
-  tableCell: {
-    flex: 2,
-    textAlign: 'center',
   },
 });

@@ -22,8 +22,6 @@ export const SimulationScreen = ({navigation}: Props) => {
   const isFocused = useIsFocused();
   const storage = new MMKV(); // Crear la instancia de almacenamiento
 
-  console.log(navigation.getState());
-
   const [simulations, setSimulations] = useState<Simulation[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -50,6 +48,16 @@ export const SimulationScreen = ({navigation}: Props) => {
     }
   };
 
+  const handleDeleteSimulation = (simulationId: string) => {
+    setSimulations(prevSimulations => {
+      const updatedSimulations = prevSimulations.filter(
+        sim => sim.id !== simulationId,
+      );
+      storage.set('simulations', JSON.stringify(updatedSimulations));
+      return updatedSimulations;
+    });
+  };
+
   // Llamar la función para cargar las simulaciones cuando la pantalla está enfocada
   useEffect(() => {
     loadSimulations();
@@ -64,7 +72,10 @@ export const SimulationScreen = ({navigation}: Props) => {
   }, []);
 
   const handleViewSimulation = (sim: Simulation) => {
-    navigation.navigate('SimulationDetails', {simulation: sim});
+    navigation.navigate('SimulationDetails', {
+      simulation: sim,
+      onDelete: handleDeleteSimulation,
+    });
   };
 
   return (
