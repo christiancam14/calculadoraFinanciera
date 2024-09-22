@@ -21,7 +21,10 @@ import {
 } from '../../../core/entities/simulatorEntities';
 // import {formatAsCurrency} from '../../../config/helpers/formatAsCurrency';
 import {MainLayout} from '../../layouts/MainLayour';
-import {calculateAmortizationEA} from '../../../config/helpers/calculateAmortization';
+// import {calculateAmortizationEA} from '../../../config/helpers/calculateAmortization';
+import {calculateAmortizationEA} from '../../../config/helpers/calculateAmortizationEA';
+import {calculateAmortizationMonthly} from '../../../config/helpers/calculateAmortizationMonthly';
+import {calculateAmortizationNominal} from '../../../config/helpers/calculateAmortizationNominal';
 
 export const HomeScreen = () => {
   // const [amount, setAmount] = useState('');
@@ -41,6 +44,54 @@ export const HomeScreen = () => {
   );
   const [isComputing, setIsComputing] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const handleCalculateAmortizationOld = () => {
+    setIsComputing(true);
+
+    // Convertir valores de strings a números
+    const P0 = parseFloat(amount.replace(/,/g, '')); // Monto del crédito
+    const tasaInteres = parseFloat(interest) / 100; // Tasa de interés
+    const nPeriodos = parseInt(duration, 10); // Número de periodos del préstamo
+
+    let entries;
+
+    // Calcular la amortización usando la función externa
+    switch (interestRate) {
+      case 'Mensual':
+        console.log('Mensual');
+        entries = calculateAmortizationMonthly(
+          P0,
+          tasaInteres,
+          nPeriodos,
+          periodicity,
+        );
+        break;
+      case 'Efectivo Anual':
+        console.log('Efectivo Anual');
+        entries = calculateAmortizationEA(
+          P0,
+          tasaInteres,
+          nPeriodos,
+          periodicity,
+        );
+        break;
+      case 'Nominal Anual':
+        console.log('Efectivo Anual');
+        entries = calculateAmortizationNominal(
+          P0,
+          tasaInteres,
+          nPeriodos,
+          periodicity,
+        );
+        break;
+    }
+
+    entries = calculateAmortizationEA(P0, tasaInteres, nPeriodos, periodicity);
+
+    setAmortizationData(entries);
+    setIsComputing(false);
+  };
+
   const handleCalculateAmortization = () => {
     setIsComputing(true);
 
@@ -49,13 +100,42 @@ export const HomeScreen = () => {
     const tasaInteres = parseFloat(interest) / 100; // Tasa de interés
     const nPeriodos = parseInt(duration, 10); // Número de periodos del préstamo
 
+    let entries;
+
     // Calcular la amortización usando la función externa
-    const entries = calculateAmortizationEA(
-      P0,
-      tasaInteres,
-      nPeriodos,
-      // periodicity,
-    );
+    switch (interestRate) {
+      case 'Mensual':
+        console.log('Mensual');
+        entries = calculateAmortizationMonthly(
+          P0,
+          tasaInteres,
+          nPeriodos,
+          periodicity,
+        );
+        break;
+      case 'Efectivo Anual':
+        console.log('Efectivo Anual');
+        entries = calculateAmortizationEA(
+          P0,
+          tasaInteres,
+          nPeriodos,
+          periodicity,
+        );
+        break;
+      case 'Nominal Anual':
+        console.log('Nominal Anual');
+        entries = calculateAmortizationNominal(
+          P0,
+          tasaInteres,
+          nPeriodos,
+          periodicity,
+        );
+        break;
+      default:
+        console.error('Tipo de interés no válido');
+        setIsComputing(false);
+        return;
+    }
 
     setAmortizationData(entries);
     setIsComputing(false);
@@ -169,7 +249,7 @@ export const HomeScreen = () => {
             <View style={{height: 20}} />
 
             <AmortizationTable data={amortizationData} />
-            <View style={{height: 60}} />
+            <View style={{height: 100}} />
           </View>
         </ScrollView>
       </MainLayout>

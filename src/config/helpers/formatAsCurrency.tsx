@@ -6,8 +6,5 @@ export const formatAsCurrency = (value: number) => {
     maximumFractionDigits: 0,
   }).format(value);
 
-  console.log({value});
-  console.log({formatNumber});
-
   return formatNumber;
 };

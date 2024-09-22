@@ -1,12 +1,17 @@
-import { AmortizationEntry } from '../../core/entities/simulatorEntities';
-import { formatAsCurrency } from '../../config/helpers/formatAsCurrency';
+import {
+  AmortizationEntry,
+  Periodicity,
+} from '../../core/entities/simulatorEntities';
+import {formatAsCurrency} from '../../config/helpers/formatAsCurrency';
 
 export const calculateAmortizationEA = (
   amount: number,
   interestRate: number,
   duration: number,
+  periodicity: Periodicity,
 ): AmortizationEntry[] => {
-  const r = Math.pow(1 + interestRate, 1 / 12) - 1; // Asumiendo que interestRate ya es decimal
+  console.log(periodicity);
+  const r = Math.pow(1 + interestRate, 1 / 12) - 1;
   const cuota =
     (amount * r * Math.pow(1 + r, duration)) / (Math.pow(1 + r, duration) - 1);
 
