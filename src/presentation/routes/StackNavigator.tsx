@@ -2,14 +2,15 @@ import {
   createStackNavigator,
   StackCardStyleInterpolator,
 } from '@react-navigation/stack';
-import {HomeScreen} from '../screens/home/HomeScreen';
 import {SimulationScreen} from '../screens/simulation/SimulationScreen';
 import {LoadingScreen} from '../screens/loading/LoadingScreen';
+import {SimulationDetails} from '../screens/simulation/SimulationDetails';
+import {Simulation} from '../../core/entities/simulatorEntities';
 
 export type RootStackParams = {
   LoadingScreen: undefined;
-  HomeScreen: undefined;
   SimulationScreen: {productId: string};
+  SimulationDetails: {simulation: Simulation};
 };
 
 const Stack = createStackNavigator<RootStackParams>();
@@ -25,7 +26,7 @@ const fadeAnimation: StackCardStyleInterpolator = ({current}) => {
 export const StackNavigator = () => {
   return (
     <Stack.Navigator
-      initialRouteName="HomeScreen"
+      initialRouteName="SimulationScreen"
       screenOptions={{
         headerShown: false,
       }}>
@@ -35,17 +36,15 @@ export const StackNavigator = () => {
         options={{cardStyleInterpolator: fadeAnimation}}
       />
       <Stack.Screen
-        name="HomeScreen"
-        component={HomeScreen}
-        options={{cardStyleInterpolator: fadeAnimation}}
-      />
-      <Stack.Screen
         name="SimulationScreen"
         component={SimulationScreen}
         options={{cardStyleInterpolator: fadeAnimation}}
       />
-      {/* <Stack.Screen name="Profile" component={Profile} />
-      <Stack.Screen name="Settings" component={Settings} /> */}
+      <Stack.Screen
+        name="SimulationDetails"
+        component={SimulationDetails}
+        options={{cardStyleInterpolator: fadeAnimation, title: 'Detalle'}}
+      />
     </Stack.Navigator>
   );
 };

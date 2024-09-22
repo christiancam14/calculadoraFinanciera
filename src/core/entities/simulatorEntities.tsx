@@ -28,3 +28,19 @@ export interface AmortizationEntry {
   saldo: string; // El saldo restante del préstamo después del pago
   cuota: string; // El valor total del pago (cuota) en ese periodo
 }
+
+export interface SimulationData {
+  value: string;
+  interest: string;
+  duration: string;
+  periodicity: string;
+  interestRate: string;
+}
+
+export interface Simulation {
+  id: string;
+  nombre: string;
+  date: Date;
+  simulationData: SimulationData;
+  data: AmortizationEntry[];
+}

@@ -8,18 +8,35 @@ import {
   Input,
 } from '@ui-kitten/components';
 import {StyleSheet, useColorScheme} from 'react-native';
-import {AmortizationEntry} from '../../core/entities/simulatorEntities';
+import {
+  AmortizationEntry,
+  Simulation,
+} from '../../core/entities/simulatorEntities';
 import {formatAsCurrency} from '../../config/helpers/formatAsCurrency';
 import * as eva from '@eva-design/eva';
 import {MMKV} from 'react-native-mmkv';
 
-interface AmortizationTableProps {
-  data: AmortizationEntry[];
+interface SimulationData {
+  value: string;
+  interest: string;
+  duration: string;
+  periodicity: string;
+  interestRate: string;
 }
 
-export const AmortizationTable = ({data}: AmortizationTableProps) => {
+interface AmortizationTableProps {
+  data: AmortizationEntry[];
+  simulationData: SimulationData;
+  isNew?: boolean;
+}
+
+export const AmortizationTable = ({
+  data,
+  simulationData,
+  isNew = true,
+}: AmortizationTableProps) => {
   const [isSaving, setIsSaving] = useState(false);
-  const [nombreSimulacion, setNombreSimulacion] = useState('false');
+  const [nombreSimulacion, setNombreSimulacion] = useState('');
 
   const storage = new MMKV();
 
@@ -63,14 +80,24 @@ export const AmortizationTable = ({data}: AmortizationTableProps) => {
 
   const handleSave = () => {
     const simulationId = Date.now().toString(); // Genera un ID único usando la fecha actual
-    const simulationData = {
+    const nuevaSimulacion: Simulation = {
       id: simulationId,
       nombre: nombreSimulacion,
-      data: data, // Guarda los datos de amortización
+      date: new Date(),
+      simulationData: simulationData,
+      data: data,
     };
 
     // Guarda la simulación en MMKV
-    storage.set(simulationId, JSON.stringify(simulationData));
+    // storage.set(simulationId, JSON.stringify(simulationData));
+    const storedSimulations = storage.getString('simulations');
+    let simulations = storedSimulations ? JSON.parse(storedSimulations) : [];
+
+    // Agregar la nueva simulación
+    simulations.push(nuevaSimulacion);
+
+    // Guardar el array actualizado como JSON
+    storage.set('simulations', JSON.stringify(simulations));
 
     setIsSaving(false); // Cierra el modal después de guardar
     setNombreSimulacion(''); // Limpia el campo de nombre
@@ -118,6 +145,25 @@ export const AmortizationTable = ({data}: AmortizationTableProps) => {
         </Layout>
       </Modal>
       <Layout style={styles.tableContainer}>
+        <Layout
+          style={{display: 'flex', flexDirection: 'column', marginBottom: 12}}>
+          <Text style={{flex: 1, textAlign: 'center'}}>Monto</Text>
+          <Text style={{flex: 1, textAlign: 'center'}}>
+            {formatAsCurrency(parseFloat(simulationData.value))!}
+          </Text>
+        </Layout>
+        <Layout style={{display: 'flex', flexDirection: 'row'}}>
+          <Text style={{flex: 1}}>Interes: {simulationData.interest!}%</Text>
+          <Text style={{flex: 1}}>{simulationData.interestRate!}</Text>
+        </Layout>
+        <Layout
+          style={{display: 'flex', flexDirection: 'row', marginBottom: 12}}>
+          <Text style={{flex: 1}}>Cuotas: {simulationData.duration!}</Text>
+          <Text style={{flex: 1}}>
+            Frecuencia: {simulationData.periodicity!}
+          </Text>
+        </Layout>
+
         <Layout style={[styles.tableRow, styles.header]}>
           <Text style={styles.tableHeader}>No.</Text>
           <Text style={[styles.tableHeader, {flex: 4}]}>Capital</Text>
@@ -155,7 +201,7 @@ export const AmortizationTable = ({data}: AmortizationTableProps) => {
           </Text>
         </Layout>
       </Layout>
-      <Layout style={styles.contBtn}>
+      <Layout style={[styles.contBtn, isNew ? styles.toggleBtn : null]}>
         <Button onPress={handleModalSave} style={styles.btnGuardar}>
           Guardar Simulación
         </Button>
@@ -165,6 +211,9 @@ export const AmortizationTable = ({data}: AmortizationTableProps) => {
 };
 
 const styles = StyleSheet.create({
+  toggleBtn: {
+    display: 'none',
+  },
   modalContainer: {
     width: '100%',
     marginHorizontal: 'auto',

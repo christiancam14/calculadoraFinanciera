@@ -18,6 +18,7 @@ import {
   InterestData,
   Periodicity,
   PeriodicityData,
+  SimulationData,
 } from '../../../core/entities/simulatorEntities';
 import {calculateAmortizationEA} from '../../../config/helpers/calculateAmortizationEA';
 import {calculateAmortizationMonthly} from '../../../config/helpers/calculateAmortizationMonthly';
@@ -40,6 +41,8 @@ export const HomeScreen = () => {
     [],
   );
   const [isComputing, setIsComputing] = useState(false);
+
+  const [dataSimulated, setDataSimulated] = useState<SimulationData>();
 
   const isValidForm =
     interest.length > 0 && duration.length > 0 && periodicity.length > 0;
@@ -87,6 +90,13 @@ export const HomeScreen = () => {
     }
 
     setAmortizationData(entries);
+    setDataSimulated({
+      value: amount,
+      interest: interest,
+      duration: duration,
+      periodicity: periodicity,
+      interestRate: interestRate,
+    });
     setIsComputing(false);
   };
 
@@ -192,7 +202,11 @@ export const HomeScreen = () => {
 
           <View style={{height: 20}} />
 
-          <AmortizationTable data={amortizationData} />
+          <AmortizationTable
+            data={amortizationData}
+            isNew={false}
+            simulationData={dataSimulated!}
+          />
           <View style={{height: 100}} />
         </View>
       </ScrollView>
