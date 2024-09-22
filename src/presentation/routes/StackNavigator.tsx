@@ -38,7 +38,10 @@ export const StackNavigator = () => {
       <Stack.Screen
         name="SimulationScreen"
         component={SimulationScreen}
-        options={{cardStyleInterpolator: fadeAnimation}}
+        options={() => ({
+          cardStyleInterpolator: fadeAnimation,
+          title: 'Detalle',
+        })}
       />
       <Stack.Screen
         name="SimulationDetails"
