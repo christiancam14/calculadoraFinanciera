@@ -19,9 +19,6 @@ import {
   Periodicity,
   PeriodicityData,
 } from '../../../core/entities/simulatorEntities';
-// import {formatAsCurrency} from '../../../config/helpers/formatAsCurrency';
-import {MainLayout} from '../../layouts/MainLayour';
-// import {calculateAmortizationEA} from '../../../config/helpers/calculateAmortization';
 import {calculateAmortizationEA} from '../../../config/helpers/calculateAmortizationEA';
 import {calculateAmortizationMonthly} from '../../../config/helpers/calculateAmortizationMonthly';
 import {calculateAmortizationNominal} from '../../../config/helpers/calculateAmortizationNominal';
@@ -44,53 +41,8 @@ export const HomeScreen = () => {
   );
   const [isComputing, setIsComputing] = useState(false);
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const handleCalculateAmortizationOld = () => {
-    setIsComputing(true);
-
-    // Convertir valores de strings a números
-    const P0 = parseFloat(amount.replace(/,/g, '')); // Monto del crédito
-    const tasaInteres = parseFloat(interest) / 100; // Tasa de interés
-    const nPeriodos = parseInt(duration, 10); // Número de periodos del préstamo
-
-    let entries;
-
-    // Calcular la amortización usando la función externa
-    switch (interestRate) {
-      case 'Mensual':
-        console.log('Mensual');
-        entries = calculateAmortizationMonthly(
-          P0,
-          tasaInteres,
-          nPeriodos,
-          periodicity,
-        );
-        break;
-      case 'Efectivo Anual':
-        console.log('Efectivo Anual');
-        entries = calculateAmortizationEA(
-          P0,
-          tasaInteres,
-          nPeriodos,
-          periodicity,
-        );
-        break;
-      case 'Nominal Anual':
-        console.log('Efectivo Anual');
-        entries = calculateAmortizationNominal(
-          P0,
-          tasaInteres,
-          nPeriodos,
-          periodicity,
-        );
-        break;
-    }
-
-    entries = calculateAmortizationEA(P0, tasaInteres, nPeriodos, periodicity);
-
-    setAmortizationData(entries);
-    setIsComputing(false);
-  };
+  const isValidForm =
+    interest.length > 0 && duration.length > 0 && periodicity.length > 0;
 
   const handleCalculateAmortization = () => {
     setIsComputing(true);
@@ -147,112 +99,106 @@ export const HomeScreen = () => {
 
   return (
     <>
-      <MainLayout
-        title="Simulador de créditos"
-        subTitle="Aplicación administrativa">
-        <ScrollView>
-          <Modal
-            visible={isComputing}
-            backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.8)'}}>
-            <Spinner status="info" size="large" />
-          </Modal>
+      <ScrollView>
+        <Modal
+          visible={isComputing}
+          backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.8)'}}>
+          <Spinner status="info" size="large" />
+        </Modal>
 
-          <View style={{paddingVertical: 20, paddingHorizontal: 10}}>
-            <Text
-              category="h5"
-              style={{alignSelf: 'center', paddingBottom: 10}}>
-              Simulador de crédito
-            </Text>
-            <Text style={styles.label}>Monto del Crédito ($)</Text>
-            <Input
-              keyboardType="numeric"
-              placeholder="Ingresa el monto"
-              value={amount}
-              onChangeText={setAmount}
-              style={{borderBottomWidth: 1, marginBottom: 20}}
-            />
+        <View style={{paddingVertical: 20, paddingHorizontal: 10}}>
+          <Text category="h5" style={{alignSelf: 'center', paddingBottom: 10}}>
+            Simulador de crédito
+          </Text>
+          <Text style={styles.label}>Monto del Crédito ($)</Text>
+          <Input
+            keyboardType="numeric"
+            placeholder="Ingresa el monto"
+            value={amount}
+            onChangeText={setAmount}
+            style={{borderBottomWidth: 1, marginBottom: 20}}
+          />
 
-            <Text style={styles.label}>Tasa de Interés (%)</Text>
-            <View style={{display: 'flex', flexDirection: 'row', gap: 10}}>
-              <View style={{flex: 4}}>
-                <Select
-                  selectedIndex={indexInterest}
-                  value={interestRate}
-                  onSelect={(index: IndexPath | IndexPath[]) => {
-                    let selectedIndex;
-                    if (Array.isArray(index)) {
-                      // Maneja el caso cuando es un array de IndexPath[]
-                      selectedIndex = index[0];
-                      setIndexInterest(selectedIndex); // Solo selecciona el primero en caso de array
-                    } else {
-                      // Maneja el caso cuando es un solo IndexPath
-                      selectedIndex = index;
-                      setIndexInterest(selectedIndex);
-                    }
-                    setInterestRate(InterestData[selectedIndex.row]);
-                  }}
-                  style={{marginBottom: 20}}>
-                  {InterestData.map(renderOption)}
-                </Select>
-              </View>
-              <View style={{flex: 5}}>
-                <Input
-                  keyboardType="numeric"
-                  placeholder="Interés %"
-                  value={interest}
-                  onChangeText={setInterest}
-                  style={{borderBottomWidth: 1, marginBottom: 20}}
-                />
-              </View>
+          <Text style={styles.label}>Tasa de Interés (%)</Text>
+          <View style={{display: 'flex', flexDirection: 'row', gap: 10}}>
+            <View style={{flex: 4}}>
+              <Select
+                selectedIndex={indexInterest}
+                value={interestRate}
+                onSelect={(index: IndexPath | IndexPath[]) => {
+                  let selectedIndex;
+                  if (Array.isArray(index)) {
+                    // Maneja el caso cuando es un array de IndexPath[]
+                    selectedIndex = index[0];
+                    setIndexInterest(selectedIndex); // Solo selecciona el primero en caso de array
+                  } else {
+                    // Maneja el caso cuando es un solo IndexPath
+                    selectedIndex = index;
+                    setIndexInterest(selectedIndex);
+                  }
+                  setInterestRate(InterestData[selectedIndex.row]);
+                }}
+                style={{marginBottom: 20}}>
+                {InterestData.map(renderOption)}
+              </Select>
             </View>
-
-            <Text style={styles.label}>Plazo del préstamo</Text>
-            <View style={{display: 'flex', flexDirection: 'row', gap: 10}}>
-              <View style={{flex: 4}}>
-                <Select
-                  selectedIndex={indexPeriodicity}
-                  value={periodicity}
-                  onSelect={(index: IndexPath | IndexPath[]) => {
-                    let selectedIndex;
-                    if (Array.isArray(index)) {
-                      // Maneja el caso cuando es un array de IndexPath[]
-                      selectedIndex = index[0];
-                      setIndexPeriodicity(selectedIndex); // Solo selecciona el primero en caso de array
-                    } else {
-                      // Maneja el caso cuando es un solo IndexPath
-                      selectedIndex = index;
-                      setIndexPeriodicity(selectedIndex);
-                    }
-                    setPeriodicity(PeriodicityData[selectedIndex.row]);
-                  }}
-                  style={{marginBottom: 20}}>
-                  {PeriodicityData.map(renderOption)}
-                </Select>
-              </View>
-              <View style={{flex: 5}}>
-                <Input
-                  keyboardType="numeric"
-                  placeholder="Duración"
-                  value={duration}
-                  onChangeText={setDuration}
-                  style={{borderBottomWidth: 1, marginBottom: 20}}
-                />
-              </View>
+            <View style={{flex: 5}}>
+              <Input
+                keyboardType="numeric"
+                placeholder="Interés %"
+                value={interest}
+                onChangeText={setInterest}
+                style={{borderBottomWidth: 1, marginBottom: 20}}
+              />
             </View>
-            <Button
-              style={styles.btnCalculate}
-              disabled={isComputing}
-              onPress={handleCalculateAmortization}>
-              Calcular Amortización
-            </Button>
-
-            <View style={{height: 20}} />
-
-            <AmortizationTable data={amortizationData} />
-            <View style={{height: 100}} />
           </View>
-        </ScrollView>
-      </MainLayout>
+
+          <Text style={styles.label}>Plazo del préstamo</Text>
+          <View style={{display: 'flex', flexDirection: 'row', gap: 10}}>
+            <View style={{flex: 4}}>
+              <Select
+                selectedIndex={indexPeriodicity}
+                value={periodicity}
+                onSelect={(index: IndexPath | IndexPath[]) => {
+                  let selectedIndex;
+                  if (Array.isArray(index)) {
+                    // Maneja el caso cuando es un array de IndexPath[]
+                    selectedIndex = index[0];
+                    setIndexPeriodicity(selectedIndex); // Solo selecciona el primero en caso de array
+                  } else {
+                    // Maneja el caso cuando es un solo IndexPath
+                    selectedIndex = index;
+                    setIndexPeriodicity(selectedIndex);
+                  }
+                  setPeriodicity(PeriodicityData[selectedIndex.row]);
+                }}
+                style={{marginBottom: 20}}>
+                {PeriodicityData.map(renderOption)}
+              </Select>
+            </View>
+            <View style={{flex: 5}}>
+              <Input
+                keyboardType="numeric"
+                placeholder="Duración"
+                value={duration}
+                onChangeText={setDuration}
+                style={{borderBottomWidth: 1, marginBottom: 20}}
+              />
+            </View>
+          </View>
+          <Button
+            style={styles.btnCalculate}
+            disabled={!isValidForm}
+            onPress={handleCalculateAmortization}>
+            Calcular Amortización
+          </Button>
+
+          <View style={{height: 20}} />
+
+          <AmortizationTable data={amortizationData} />
+          <View style={{height: 100}} />
+        </View>
+      </ScrollView>
     </>
   );
 };

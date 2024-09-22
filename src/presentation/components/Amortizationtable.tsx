@@ -10,7 +10,11 @@ interface AmortizationTableProps {
 
 export const AmortizationTable = ({data}: AmortizationTableProps) => {
   if (!Array.isArray(data) || data.length === 0) {
-    return <Text>No hay datos para mostrar.</Text>;
+    return (
+      <Text style={{textAlign: 'center'}}>
+        Ingresa la información de tu crédito
+      </Text>
+    );
   }
 
   const parseCurrency = (value: string) => {
