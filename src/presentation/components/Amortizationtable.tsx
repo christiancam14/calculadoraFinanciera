@@ -1,14 +1,31 @@
-import React from 'react';
-import {Layout, Text, Divider} from '@ui-kitten/components';
-import {StyleSheet} from 'react-native';
+import React, {useState} from 'react';
+import {
+  Layout,
+  Text,
+  Divider,
+  Button,
+  Modal,
+  Input,
+} from '@ui-kitten/components';
+import {StyleSheet, useColorScheme} from 'react-native';
 import {AmortizationEntry} from '../../core/entities/simulatorEntities';
 import {formatAsCurrency} from '../../config/helpers/formatAsCurrency';
+import * as eva from '@eva-design/eva';
+import {MMKV} from 'react-native-mmkv';
 
 interface AmortizationTableProps {
   data: AmortizationEntry[];
 }
 
 export const AmortizationTable = ({data}: AmortizationTableProps) => {
+  const [isSaving, setIsSaving] = useState(false);
+  const [nombreSimulacion, setNombreSimulacion] = useState('false');
+
+  const storage = new MMKV();
+
+  const colorScheme = useColorScheme();
+  const theme = colorScheme === 'dark' ? eva.dark : eva.light;
+
   if (!Array.isArray(data) || data.length === 0) {
     return (
       <Text style={{textAlign: 'center'}}>
@@ -38,19 +55,83 @@ export const AmortizationTable = ({data}: AmortizationTableProps) => {
     0,
   );
 
+  const handleModalSave = () => {
+    // Lógica de guardado
+
+    setIsSaving(true);
+  };
+
+  const handleSave = () => {
+    const simulationId = Date.now().toString(); // Genera un ID único usando la fecha actual
+    const simulationData = {
+      id: simulationId,
+      nombre: nombreSimulacion,
+      data: data, // Guarda los datos de amortización
+    };
+
+    // Guarda la simulación en MMKV
+    storage.set(simulationId, JSON.stringify(simulationData));
+
+    setIsSaving(false); // Cierra el modal después de guardar
+    setNombreSimulacion(''); // Limpia el campo de nombre
+  };
+
   return (
     <Layout style={{width: '100%'}}>
+      <Modal
+        visible={isSaving}
+        style={styles.modalContainer}
+        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.8)'}}>
+        <Layout
+          style={[
+            styles.modalContent,
+            {
+              backgroundColor:
+                colorScheme === 'dark'
+                  ? theme['color-basic-800']
+                  : theme['color-basic-100'],
+            },
+          ]}>
+          <Text
+            style={[
+              {
+                color: theme['color-basic-color'],
+                marginBottom: 12,
+                textAlign: 'center',
+                fontSize: 16,
+                fontWeight: 800,
+              },
+            ]}>
+            Guardar Simulación
+          </Text>
+          <Input
+            placeholder="Nombre de tu simulación"
+            value={nombreSimulacion}
+            onChangeText={setNombreSimulacion}
+          />
+          <Button
+            onPress={handleSave}
+            style={{marginTop: 36}}
+            disabled={nombreSimulacion.length === 0}>
+            Guardar
+          </Button>
+        </Layout>
+      </Modal>
       <Layout style={styles.tableContainer}>
-        <Layout style={styles.tableRow}>
+        <Layout style={[styles.tableRow, styles.header]}>
           <Text style={styles.tableHeader}>No.</Text>
           <Text style={[styles.tableHeader, {flex: 4}]}>Capital</Text>
           <Text style={[styles.tableHeader, {flex: 4}]}>Interés</Text>
           <Text style={[styles.tableHeader, {flex: 4}]}>Saldo</Text>
         </Layout>
         <Divider />
-        {data.map(item => (
+        {data.map((item, index) => (
           <React.Fragment key={item.periodo}>
-            <Layout style={styles.tableRow}>
+            <Layout
+              style={[
+                styles.tableRow,
+                index % 2 === 0 ? null : styles.rowColor, // Usa null en lugar de cadena vacía
+              ]}>
               <Text style={styles.tableCell}>{item.periodo}</Text>
               <Text style={[styles.tableCell, {flex: 4}]}>
                 {item.principal}
@@ -74,12 +155,44 @@ export const AmortizationTable = ({data}: AmortizationTableProps) => {
           </Text>
         </Layout>
       </Layout>
+      <Layout style={styles.contBtn}>
+        <Button onPress={handleModalSave} style={styles.btnGuardar}>
+          Guardar Simulación
+        </Button>
+      </Layout>
     </Layout>
   );
 };
 
 const styles = StyleSheet.create({
+  modalContainer: {
+    width: '100%',
+    marginHorizontal: 'auto',
+    alignSelf: 'center',
+  },
+  modalContent: {
+    backgroundColor: 'white',
+    paddingVertical: 20,
+    paddingHorizontal: 12,
+    width: '80%',
+    alignSelf: 'center',
+    borderRadius: 6,
+  },
+  modalText: {
+    color: 'white',
+  },
+  contBtn: {
+    paddingVertical: 20,
+  },
+  btnGuardar: {width: 210, alignSelf: 'center'},
   tableContainer: {},
+  header: {
+    paddingVertical: 20,
+    backgroundColor: 'rgba(128, 128, 128, 0.05)',
+  },
+  rowColor: {
+    backgroundColor: 'rgba(128, 128, 128, 0.025)',
+  },
   tableRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',

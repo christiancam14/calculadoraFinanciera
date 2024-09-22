@@ -57,7 +57,6 @@ export const HomeScreen = () => {
     // Calcular la amortización usando la función externa
     switch (interestRate) {
       case 'Mensual':
-        console.log('Mensual');
         entries = calculateAmortizationMonthly(
           P0,
           tasaInteres,
@@ -66,7 +65,6 @@ export const HomeScreen = () => {
         );
         break;
       case 'Efectivo Anual':
-        console.log('Efectivo Anual');
         entries = calculateAmortizationEA(
           P0,
           tasaInteres,
@@ -75,7 +73,6 @@ export const HomeScreen = () => {
         );
         break;
       case 'Nominal Anual':
-        console.log('Nominal Anual');
         entries = calculateAmortizationNominal(
           P0,
           tasaInteres,
