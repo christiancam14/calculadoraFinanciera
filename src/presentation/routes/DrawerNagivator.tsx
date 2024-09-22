@@ -4,6 +4,7 @@ import {StackNavigator} from './StackNavigator';
 import {SimulationScreen} from '../screens/simulation/SimulationScreen';
 import {useColorScheme} from 'react-native';
 import * as eva from '@eva-design/eva';
+import {ConversionScreen} from '../screens/conversion/ConversionScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -31,8 +32,9 @@ export const DrawerNagivator = () => {
         },
         headerShadowVisible: true,
       }}>
-      <Drawer.Screen name="Home" component={StackNavigator} />
-      <Drawer.Screen name="SimulationScreen" component={SimulationScreen} />
+      <Drawer.Screen name="Simulador" component={StackNavigator} />
+      <Drawer.Screen name="Mis simulaciones" component={SimulationScreen} />
+      <Drawer.Screen name="Conversión de tasas" component={ConversionScreen} />
     </Drawer.Navigator>
   );
 };

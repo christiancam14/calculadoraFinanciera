@@ -13,7 +13,7 @@ export const SimulationScreen = () => {
 
       await scheduleNotification({
         date: scheduleDate,
-        notificationTitle: 'Recordatorio guardado',
+        notificationSubtitle: 'Recordatorio',
         notificationBody: 'Este es el cuerpo de tu recordatorio',
       });
       console.log('Notificación programada exitosamente.');

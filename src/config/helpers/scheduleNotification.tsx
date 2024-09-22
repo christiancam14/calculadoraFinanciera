@@ -1,15 +1,16 @@
 import notifee, {TriggerType} from '@notifee/react-native';
+import { format } from 'date-fns';
 
 interface Props {
   date: Date;
-  notificationTitle?: string;
+  notificationSubtitle?: string;
   notificationBody?: string;
 }
 
 // Función para programar la notificación
 export async function scheduleNotification({
   date,
-  notificationTitle = 'Recordatorio',
+  notificationSubtitle = 'Recordatorio',
   notificationBody = '¡Es hora de tu evento!',
 }: Props) {
   // Asegúrate de que la fecha sea válida
@@ -23,10 +24,13 @@ export async function scheduleNotification({
     sound: 'default',
   });
 
+  const currentTime = format(new Date(), 'HH:mm');
+
   // Programa la notificación
   await notifee.createTriggerNotification(
     {
-      title: notificationTitle,
+      title: `Calculadora - ${currentTime}`,
+      subtitle: notificationSubtitle,
       body: notificationBody,
       android: {
         channelId: '7815696ecbf1c',
