@@ -1,5 +1,4 @@
-import notifee, {TriggerType} from '@notifee/react-native';
-import { format } from 'date-fns';
+import notifee, {AndroidCategory, TriggerType} from '@notifee/react-native';
 
 interface Props {
   date: Date;
@@ -10,7 +9,7 @@ interface Props {
 // Función para programar la notificación
 export async function scheduleNotification({
   date,
-  notificationSubtitle = 'Recordatorio',
+  notificationSubtitle = '¡A pagar!',
   notificationBody = '¡Es hora de tu evento!',
 }: Props) {
   // Asegúrate de que la fecha sea válida
@@ -24,17 +23,18 @@ export async function scheduleNotification({
     sound: 'default',
   });
 
-  const currentTime = format(new Date(), 'HH:mm');
-
   // Programa la notificación
   await notifee.createTriggerNotification(
     {
-      title: `Calculadora - ${currentTime}`,
+      title: '&#128178; Tienes un pago hoy &#128178;',
       subtitle: notificationSubtitle,
       body: notificationBody,
       android: {
         channelId: '7815696ecbf1c',
         importance: 4,
+        category: AndroidCategory.REMINDER,
+        timestamp: Date.now(),
+        showTimestamp: true,
       },
     },
     {

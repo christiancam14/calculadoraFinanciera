@@ -106,7 +106,7 @@ export const HomeScreen = () => {
 
   return (
     <>
-      <ScrollView>
+      <ScrollView keyboardShouldPersistTaps="always">
         <Modal
           visible={isComputing}
           backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.8)'}}>

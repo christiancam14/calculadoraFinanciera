@@ -4,11 +4,15 @@ import {useColorScheme} from 'react-native';
 import * as eva from '@eva-design/eva';
 import {HomeScreen} from '../screens/home/HomeScreen';
 import {ConversionScreen} from '../screens/conversion/ConversionScreen';
+import {useNavigation} from '@react-navigation/native';
 
 const Drawer = createDrawerNavigator();
 
 export const DrawerNagivator = () => {
   const colorScheme = useColorScheme();
+  const navigation = useNavigation();
+  // const navigationRef = useNavigationContainerRef();
+
   const theme = colorScheme === 'dark' ? eva.dark : eva.light;
   const backgroundColor =
     colorScheme === 'dark'
@@ -35,9 +39,14 @@ export const DrawerNagivator = () => {
       <Drawer.Screen
         name="StackNavigator "
         component={StackNavigator}
-        options={{
+        options={() => ({
           title: 'Simulación',
-        }}
+          headerRight: () => {
+            console.log(navigation);
+            // Mostrar el botón solo si la ruta actual es SimulationScreen
+            return null; // No mostrar nada si no es la SimulationScreen
+          },
+        })}
       />
       <Drawer.Screen name="Conversion de tasas" component={ConversionScreen} />
       {/* <Drawer.Screen name="SimulationDetails" component={StackNavigator} /> */}

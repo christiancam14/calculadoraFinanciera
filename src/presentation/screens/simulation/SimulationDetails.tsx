@@ -11,7 +11,10 @@ import * as eva from '@eva-design/eva';
 type RootStackParamList = {
   SimulationDetails: {
     simulation: Simulation;
-    onDelete: (simulationId: string) => void;
+  };
+  SimulationScreen: {
+    simulationId: string;
+    action: string;
   };
 };
 
@@ -31,7 +34,7 @@ export const SimulationDetails = ({
 }: SimulationDetailsProps) => {
   const [isScheduling, setIsScheduling] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const {simulation, onDelete} = route.params;
+  const {simulation} = route.params;
 
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? eva.dark : eva.light;
@@ -50,8 +53,10 @@ export const SimulationDetails = ({
   };
 
   const handleDelete = () => {
-    onDelete(simulation.id); // Llamar a la función onDelete con el ID de la simulación
-    navigation.goBack();
+    navigation.navigate('SimulationScreen', {
+      simulationId: simulation.id,
+      action: 'delete',
+    });
     setIsDeleting(false);
   };
 
