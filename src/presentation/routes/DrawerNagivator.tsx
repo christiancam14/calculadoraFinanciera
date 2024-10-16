@@ -7,12 +7,15 @@ import {ConversionScreen} from '../screens/conversion/ConversionScreen';
 import {NavigationProp, useNavigation} from '@react-navigation/native';
 import {Button} from '@ui-kitten/components';
 import {MyIcon} from '../components/ui/MyIcon';
+import {useModal} from '../../core/providers/ModalProvider';
+import {NotificationsScreen} from '../screens/notification/NotificationsScreen';
 
 const Drawer = createDrawerNavigator();
 
 export const DrawerNagivator = () => {
   const colorScheme = useColorScheme();
   const navigation = useNavigation<NavigationProp<RootStackParams>>();
+  const {toggleModal} = useModal();
   // const navigationRef = useNavigationContainerRef();
 
   const theme = colorScheme === 'dark' ? eva.dark : eva.light;
@@ -37,16 +40,14 @@ export const DrawerNagivator = () => {
         },
         headerShadowVisible: true,
       }}>
-      <Drawer.Screen name="Simulador" component={HomeScreen} />
+      <Drawer.Screen name="Calculadora de créditos" component={HomeScreen} />
       <Drawer.Screen
         name="StackNavigator "
         component={StackNavigator}
         options={() => ({
-          title: 'Simulación',
+          title: 'Créditos simulados',
           headerRight: () => {
             const currentRoute = (navigation as any).getCurrentRoute();
-
-            console.log(currentRoute.name); // Esto debería funcionar sin problemas
             if (currentRoute.name === 'SimulationDetails') {
               return (
                 <Button
@@ -54,23 +55,18 @@ export const DrawerNagivator = () => {
                     backgroundColor: 'transparent',
                     borderColor: 'transparent',
                   }}
-                  onPress={() => {
-                    // Asegúrate de pasar el objeto simulation
-                    navigation.navigate('SimulationDetails', {
-                      simulation: currentRoute.params.simulation, // Debes pasar este objeto
-                      toggleModal: true, // También pasa toggleModal
-                    });
-                  }}>
+                  onPress={toggleModal}>
+                  {/* Llama a toggleModal aquí */}
                   <MyIcon name="calendar-outline" color="white" />
                 </Button>
               );
             }
-
             return null; // No mostrar nada si no es la SimulationScreen
           },
         })}
       />
       <Drawer.Screen name="Conversion de tasas" component={ConversionScreen} />
+      <Drawer.Screen name="Notificaciones" component={NotificationsScreen} />
       {/* <Drawer.Screen name="SimulationDetails" component={StackNavigator} /> */}
     </Drawer.Navigator>
   );

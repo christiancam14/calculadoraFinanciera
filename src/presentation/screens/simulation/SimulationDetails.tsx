@@ -1,13 +1,12 @@
 import {NavigationProp, RouteProp} from '@react-navigation/native';
-import {StyleSheet, Text, ScrollView, useColorScheme} from 'react-native';
+import {StyleSheet, Text, ScrollView} from 'react-native';
 import {Simulation} from '../../../core/entities/simulatorEntities';
 import {Button, Layout, Modal} from '@ui-kitten/components';
 import {AmortizationTable} from '../../components/Amortizationtable';
-import {MyIcon} from '../../components/ui/MyIcon';
-import {useEffect, useState} from 'react';
 import {ModalCalendar} from '../../components/modalCalendar';
-import * as eva from '@eva-design/eva';
 import {useModal} from '../../../core/providers/ModalProvider';
+import {MyIcon} from '../../components/ui/MyIcon';
+import {scheduleNotification} from '../../../config/helpers/scheduleNotification';
 
 type RootStackParamList = {
   SimulationDetails: {
@@ -29,52 +28,65 @@ type SimulationDetailsProps = {
   navigation: NavigationProp<RootStackParamList>;
 };
 
-export const SimulationDetails = ({
-  route,
-  navigation,
-}: SimulationDetailsProps) => {
+export const SimulationDetails = ({route}: SimulationDetailsProps) => {
   const {simulation} = route.params; // Obteniendo simulation del parámetro
+
   const {isScheduling, toggleModal} = useModal(); // Uso del contexto
-  const [isDeleting, setIsDeleting] = useState(false);
 
-  const colorScheme = useColorScheme();
-  const theme = colorScheme === 'dark' ? eva.dark : eva.light;
+  const scheduledNotificationIds = [];
 
-  const handleSchedule = (date: Date) => {
-    console.log(date);
-    toggleModal(); // Llama a toggleModal directamente desde el contexto
-  };
+  const handleSchedule = async (date: Date) => {
+    const periodicity = simulation.simulationData.periodicity; // Usar la variable existente
+    const totalPeriods = simulation.data.length; // Total de cuotas
 
-  const handleDelete = () => {
-    setIsDeleting(prev => !prev); // Solo cambia la visibilidad del modal
-  };
+    // Función para calcular las fechas de recordatorio
+    const calculateReminderDates = (initialDate: Date, total: number) => {
+      const reminderDates = [];
+      for (let i = 0; i < total; i++) {
+        const nextDate = new Date(initialDate);
 
-  const handleDeleteSimulation = () => {
-    navigation.navigate('SimulationScreen', {
-      simulationId: simulation.id,
-      action: 'delete',
-    });
-    setIsDeleting(false); // Cierra el modal después de la eliminación
-  };
+        if (periodicity === 'Mensual') {
+          nextDate.setMonth(initialDate.getMonth() + i);
+        } else if (periodicity === 'Semanal') {
+          nextDate.setDate(initialDate.getDate() + i * 7); // Sumar semanas
+        }
+        reminderDates.push(nextDate);
+      }
+      return reminderDates;
+    };
 
-  useEffect(() => {
-    const headerRightButton = () => (
-      <Button onPress={handleDelete} appearance="ghost">
-        Eliminar
-      </Button>
-    );
+    const reminderDates = calculateReminderDates(date, totalPeriods);
 
-    navigation.setOptions({
-      headerRight: headerRightButton,
-    });
-  }, [navigation]);
+    // Programar las notificaciones
+    for (const reminderDate of reminderDates) {
+      const notificationDate = new Date(reminderDate);
+      notificationDate.setHours(8, 0, 0, 0); // Establecer hora a las 8 AM
 
-  useEffect(() => {
-    // Efecto para ejecutar la eliminación cuando isDeleting es verdadero
-    if (isDeleting) {
-      handleDeleteSimulation(); // Ejecuta la función cuando se activa la eliminación
+      // Solo programar si la fecha de notificación es futura
+      const now = new Date();
+      if (notificationDate > now) {
+        try {
+          const notificationId = await scheduleNotification({
+            date: notificationDate,
+            notificationSubtitle: 'Recordatorio de Pago',
+            notificationBody: `Este es tu recordatorio para la cuota ${
+              reminderDates.indexOf(reminderDate) + 1
+            }`,
+          });
+          scheduledNotificationIds.push(notificationId); // Guardar el ID
+          console.log(`Notificación programada para ${notificationDate}`);
+        } catch (error) {
+          console.error('Error programando la notificación:', error);
+        }
+      } else {
+        console.log(
+          `No se programará notificación para ${notificationDate}, ya ha pasado.`,
+        );
+      }
     }
-  }, [isDeleting]);
+
+    toggleModal(); // Cerrar el modal después de programar
+  };
 
   return (
     <Layout style={styles.container}>
@@ -87,32 +99,6 @@ export const SimulationDetails = ({
           handleToggleModal={toggleModal} // Pasando la función del contexto
         />
       </Modal>
-      <Modal
-        visible={isDeleting}
-        style={styles.modalContainer}
-        backdropStyle={styles.backdrop}>
-        <Layout
-          style={[
-            styles.modalContent,
-            {
-              backgroundColor: theme['color-basic-100'],
-            },
-          ]}>
-          <Text style={styles.modalText}>
-            ¿Estás seguro que deseas eliminar esta simulación?
-          </Text>
-          <Layout style={styles.modalButtons}>
-            <Button onPress={handleDelete} style={styles.modalButton}>
-              Salir
-            </Button>
-            <Button
-              onPress={() => setIsDeleting(true)}
-              style={[styles.modalButton, styles.deleteButton]}>
-              Eliminar
-            </Button>
-          </Layout>
-        </Layout>
-      </Modal>
       <ScrollView style={styles.scrollView}>
         <Text style={styles.title}>{simulation.nombre}</Text>
         <AmortizationTable
@@ -120,8 +106,8 @@ export const SimulationDetails = ({
           simulationData={simulation.simulationData}
         />
       </ScrollView>
-      <Button style={styles.floatingButtonSchedule} onPress={() => toggleModal}>
-        <MyIcon name="calendar-outline" color="white" />
+      <Button style={styles.floatingButtonSchedule} onPress={toggleModal}>
+        <MyIcon name="calendar-outline" white />
       </Button>
     </Layout>
   );

@@ -43,3 +43,12 @@ export async function scheduleNotification({
     },
   );
 }
+
+export const cancelNotification = async (notificationId: string) => {
+  try {
+    await notifee.cancelNotification(notificationId);
+    console.log(`Notificación con ID: ${notificationId} cancelada.`);
+  } catch (error) {
+    console.error('Error al cancelar la notificación:', error);
+  }
+};

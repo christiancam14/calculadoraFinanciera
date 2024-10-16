@@ -1,6 +1,9 @@
 import {StyleSheet, ScrollView, RefreshControl, Alert} from 'react-native';
 import {Button, Divider, Layout, Text} from '@ui-kitten/components';
-import {scheduleNotification} from '../../../config/helpers/scheduleNotification';
+import {
+  scheduleNotification,
+  cancelNotification,
+} from '../../../config/helpers/scheduleNotification'; // Asegúrate de que cancelNotification esté exportado
 import {useEffect, useState, useCallback, Fragment} from 'react';
 import {Simulation} from '../../../core/entities/simulatorEntities';
 import {MMKV} from 'react-native-mmkv';
@@ -53,6 +56,10 @@ export const SimulationScreen = ({navigation}: Props) => {
       const updatedSimulations = prevSimulations.filter(
         sim => sim.id !== simulationId,
       );
+
+      // Cancelar notificación antes de guardar la nueva lista
+      cancelNotification(simulationId); // Asumiendo que el ID de la simulación corresponde al ID de la notificación
+
       storage.set('simulations', JSON.stringify(updatedSimulations));
       return updatedSimulations;
     });
@@ -137,14 +144,14 @@ export const SimulationScreen = ({navigation}: Props) => {
                       style={[styles.tableCell, {flex: 1, marginRight: 4}]}
                       size="tiny"
                       onPress={() => handleAction('view', sim)}>
-                      <MyIcon name="eye" />
+                      <MyIcon name="eye" white />
                     </Button>
                     <Button
                       style={[styles.tableCell, {flex: 1, marginRight: 4}]}
                       size="tiny"
                       status="danger"
                       onPress={() => handleAction('delete', sim)}>
-                      <MyIcon name="trash" />
+                      <MyIcon name="trash" white />
                     </Button>
                   </Layout>
                 </Layout>
@@ -162,7 +169,6 @@ export const SimulationScreen = ({navigation}: Props) => {
     </ScrollView>
   );
 };
-
 const styles = StyleSheet.create({
   modalContainer: {
     width: '100%',
