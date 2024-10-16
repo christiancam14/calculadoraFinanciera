@@ -22,10 +22,19 @@ export const NotificationDatesList: React.FC<NotificationDatesListProps> = ({
 
   return (
     <>
-      <Text>Fechas</Text>
+      <Text
+        style={{
+          textAlign: 'center',
+          fontSize: 16,
+          fontWeight: 600,
+          marginVertical: 12,
+        }}>
+        Fechas de pagos
+      </Text>
       <FlatList
         data={notifications}
         renderItem={renderItem}
+        style={{marginHorizontal: 'auto'}}
         keyExtractor={item => item.id.toString()}
       />
     </>

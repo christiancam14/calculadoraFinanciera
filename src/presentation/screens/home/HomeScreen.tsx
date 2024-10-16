@@ -8,9 +8,8 @@ import {
   Spinner,
   Text,
 } from '@ui-kitten/components';
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import {ScrollView, StyleSheet, View} from 'react-native';
-import {AmortizationTable} from '../../components/Amortizationtable';
 import {useCurrencyInput} from '../../hooks/useCurrencyInput';
 import {
   AmortizationEntry,
@@ -23,6 +22,8 @@ import {
 import {calculateAmortizationEA} from '../../../config/helpers/calculateAmortizationEA';
 import {calculateAmortizationMonthly} from '../../../config/helpers/calculateAmortizationMonthly';
 import {calculateAmortizationNominal} from '../../../config/helpers/calculateAmortizationNominal';
+import {AmortizationTable} from '../../components/Amortizationtable';
+import {formatAsCurrency} from '../../../config/helpers/formatAsCurrency';
 
 // Custom hook para el manejo de amortización
 const useAmortization = () => {
@@ -100,6 +101,9 @@ export const HomeScreen = () => {
     new IndexPath(0),
   );
 
+  // Nuevo estado para la cuota calculada
+  const [monthlyPayment, setMonthlyPayment] = useState<number | null>(null);
+
   const isValidForm =
     interest.length > 0 && duration.length > 0 && periodicity.length > 0;
 
@@ -113,6 +117,46 @@ export const HomeScreen = () => {
 
     calculate(P0, tasaInteres, nPeriodos, periodicity, interestRate);
   };
+
+  const calculateMonthlyPayment = () => {
+    const P0 = parseFloat(amount.replace(/,/g, ''));
+    const tasaInteres = parseFloat(interest) / 100;
+    const nPeriodos = parseInt(duration, 10);
+
+    if (
+      !isNaN(P0) &&
+      !isNaN(tasaInteres) &&
+      !isNaN(nPeriodos) &&
+      duration &&
+      interest
+    ) {
+      let r = 0;
+      switch (interestRate) {
+        case 'Mensual':
+          r = tasaInteres / 12; // Tasa mensual
+          break;
+        case 'Efectivo Anual':
+          r = tasaInteres / 1; // Tasa anual (como mensual)
+          break;
+        case 'Nominal Anual':
+          r = tasaInteres / 12; // Tasa nominal anual como mensual
+          break;
+        default:
+          console.error('Tipo de interés no válido');
+          return;
+      }
+      const C =
+        (P0 * (r * Math.pow(1 + r, nPeriodos))) /
+        (Math.pow(1 + r, nPeriodos) - 1);
+      setMonthlyPayment(C);
+    } else {
+      setMonthlyPayment(null);
+    }
+  };
+
+  useEffect(() => {
+    calculateMonthlyPayment();
+  }, [amount, interest, duration, interestRate]); // Calcular cuota cuando cambien estos valores
 
   const renderOption = (title: string) => (
     <SelectItem key={title} title={title} />
@@ -207,6 +251,17 @@ export const HomeScreen = () => {
               />
             </View>
           </View>
+
+          {/* Mostrar la cuota calculada */}
+          <Text style={[styles.label, {textAlign: 'center', fontSize: 16}]}>
+            Cuota Aproximada:
+          </Text>
+          <Text style={[styles.label, {textAlign: 'center', fontSize: 20}]}>
+            {monthlyPayment
+              ? `${formatAsCurrency(monthlyPayment)}`
+              : 'Ingrese los datos'}
+          </Text>
+
           <Button
             style={styles.btnCalculate}
             disabled={!isValidForm}
@@ -216,12 +271,13 @@ export const HomeScreen = () => {
 
           <View style={{height: 20}} />
 
-          <AmortizationTable
-            data={amortizationData}
-            isNew={false}
-            simulationData={dataSimulated!}
-          />
-          <View style={{height: 100}} />
+          {dataSimulated && (
+            <AmortizationTable
+              data={amortizationData}
+              isNew={false}
+              simulationData={dataSimulated}
+            />
+          )}
         </View>
       </ScrollView>
     </>
@@ -230,10 +286,9 @@ export const HomeScreen = () => {
 
 const styles = StyleSheet.create({
   label: {
-    marginBottom: 4,
+    marginBottom: 5,
   },
   btnCalculate: {
-    width: 210,
-    alignSelf: 'center',
+    marginTop: 20,
   },
 });
