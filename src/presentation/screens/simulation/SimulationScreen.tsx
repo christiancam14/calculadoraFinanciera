@@ -1,4 +1,4 @@
-import {StyleSheet, ScrollView, RefreshControl} from 'react-native';
+import {StyleSheet, ScrollView, RefreshControl, Alert} from 'react-native';
 import {Button, Divider, Layout, Text} from '@ui-kitten/components';
 import {scheduleNotification} from '../../../config/helpers/scheduleNotification';
 import {useEffect, useState, useCallback, Fragment} from 'react';
@@ -48,7 +48,7 @@ export const SimulationScreen = ({navigation}: Props) => {
     }
   };
 
-  const handleDeleteSimulation = (simulationId: string) => {
+  const deleteSimulationById = (simulationId: string) => {
     setSimulations(prevSimulations => {
       const updatedSimulations = prevSimulations.filter(
         sim => sim.id !== simulationId,
@@ -56,6 +56,30 @@ export const SimulationScreen = ({navigation}: Props) => {
       storage.set('simulations', JSON.stringify(updatedSimulations));
       return updatedSimulations;
     });
+  };
+
+  // Función para manejar las acciones (ver o eliminar)
+  const handleAction = (action: 'view' | 'delete', simulation: Simulation) => {
+    if (action === 'view') {
+      navigation.navigate('SimulationDetails', {
+        simulation: simulation,
+      });
+    } else if (action === 'delete') {
+      // Confirmar antes de eliminar
+      Alert.alert(
+        'Eliminar Simulación',
+        '¿Estás seguro de que quieres eliminar esta simulación?',
+        [
+          {text: 'Cancelar', style: 'cancel'},
+          {
+            text: 'Eliminar',
+            onPress: () => deleteSimulationById(simulation.id),
+            style: 'destructive',
+          },
+        ],
+        {cancelable: true},
+      );
+    }
   };
 
   // Llamar la función para cargar las simulaciones cuando la pantalla está enfocada
@@ -66,17 +90,9 @@ export const SimulationScreen = ({navigation}: Props) => {
   // Función para refrescar la lista de simulaciones
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    // Aquí puedes agregar lógica para recargar las simulaciones
     loadSimulations();
     setRefreshing(false);
   }, []);
-
-  const handleViewSimulation = (sim: Simulation) => {
-    navigation.navigate('SimulationDetails', {
-      simulation: sim,
-      onDelete: handleDeleteSimulation,
-    });
-  };
 
   return (
     <ScrollView
@@ -86,17 +102,10 @@ export const SimulationScreen = ({navigation}: Props) => {
       <Layout style={styles.container}>
         <Layout style={styles.tableContainer}>
           <Layout style={[styles.tableRow, styles.header]}>
-            <Text
-              style={[
-                styles.tableHeader,
-                {flex: 1, textAlign: 'center', marginLeft: 4},
-              ]}>
-              No.
-            </Text>
-            <Text style={[styles.tableHeader, {flex: 4}]}>Nombre</Text>
-            <Text style={[styles.tableHeader, {flex: 4}]}>Fecha</Text>
+            <Text style={[styles.tableHeader, {flex: 1}]}>Nombre</Text>
+            <Text style={[styles.tableHeader, {flex: 1}]}>Fecha</Text>
             <Text style={[styles.tableHeader, {flex: 1, marginRight: 4}]}>
-              Ver
+              Acciones
             </Text>
           </Layout>
           <Divider />
@@ -110,19 +119,34 @@ export const SimulationScreen = ({navigation}: Props) => {
                     styles.tableRow,
                     index % 2 === 0 ? null : styles.rowColor,
                   ]}>
-                  <Text style={[styles.tableCell, {flex: 1}]}>{index + 1}</Text>
-                  <Text style={[styles.tableCell, {flex: 4}]}>
+                  <Text style={[styles.tableCell, {flex: 1}]}>
                     {sim.nombre}
                   </Text>
-                  <Text style={[styles.tableCell, {flex: 4}]}>
+                  <Text style={[styles.tableCell, {flex: 1}]}>
                     {new Date(sim.date).toLocaleDateString()}
                   </Text>
-                  <Button
-                    style={[styles.tableCell, {flex: 1, marginRight: 4}]}
-                    size="tiny"
-                    onPress={() => handleViewSimulation(sim)}>
-                    <MyIcon name="eye" />
-                  </Button>
+                  <Layout
+                    style={{
+                      display: 'flex',
+                      flexDirection: 'row',
+                      justifyContent: 'center',
+                      height: 'auto',
+                      flex: 1,
+                    }}>
+                    <Button
+                      style={[styles.tableCell, {flex: 1, marginRight: 4}]}
+                      size="tiny"
+                      onPress={() => handleAction('view', sim)}>
+                      <MyIcon name="eye" />
+                    </Button>
+                    <Button
+                      style={[styles.tableCell, {flex: 1, marginRight: 4}]}
+                      size="tiny"
+                      status="danger"
+                      onPress={() => handleAction('delete', sim)}>
+                      <MyIcon name="trash" />
+                    </Button>
+                  </Layout>
                 </Layout>
                 <Divider />
               </Fragment>

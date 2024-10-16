@@ -7,6 +7,7 @@ import {MyIcon} from '../../components/ui/MyIcon';
 import {useEffect, useState} from 'react';
 import {ModalCalendar} from '../../components/modalCalendar';
 import * as eva from '@eva-design/eva';
+import {useModal} from '../../../core/providers/ModalProvider';
 
 type RootStackParamList = {
   SimulationDetails: {
@@ -32,113 +33,94 @@ export const SimulationDetails = ({
   route,
   navigation,
 }: SimulationDetailsProps) => {
-  const [isScheduling, setIsScheduling] = useState(false);
+  const {simulation} = route.params; // Obteniendo simulation del parámetro
+  const {isScheduling, toggleModal} = useModal(); // Uso del contexto
   const [isDeleting, setIsDeleting] = useState(false);
-  const {simulation} = route.params;
 
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? eva.dark : eva.light;
 
-  const handleModal = () => {
-    setIsScheduling(prev => !prev);
-  };
-
-  const handleModalDelete = () => {
-    setIsDeleting(prev => !prev);
-  };
-
   const handleSchedule = (date: Date) => {
     console.log(date);
-    setIsScheduling(prev => !prev);
+    toggleModal(); // Llama a toggleModal directamente desde el contexto
   };
 
   const handleDelete = () => {
+    setIsDeleting(prev => !prev); // Solo cambia la visibilidad del modal
+  };
+
+  const handleDeleteSimulation = () => {
     navigation.navigate('SimulationScreen', {
       simulationId: simulation.id,
       action: 'delete',
     });
-    setIsDeleting(false);
+    setIsDeleting(false); // Cierra el modal después de la eliminación
   };
 
   useEffect(() => {
+    const headerRightButton = () => (
+      <Button onPress={handleDelete} appearance="ghost">
+        Eliminar
+      </Button>
+    );
+
     navigation.setOptions({
-      headerRight: () => (
-        <Button onPress={handleModalDelete} appearance="ghost">
-          Eliminar
-        </Button>
-      ),
+      headerRight: headerRightButton,
     });
   }, [navigation]);
+
+  useEffect(() => {
+    // Efecto para ejecutar la eliminación cuando isDeleting es verdadero
+    if (isDeleting) {
+      handleDeleteSimulation(); // Ejecuta la función cuando se activa la eliminación
+    }
+  }, [isDeleting]);
 
   return (
     <Layout style={styles.container}>
       <Modal
         visible={isScheduling}
         style={styles.modalContainer}
-        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.8)'}}>
+        backdropStyle={styles.backdrop}>
         <ModalCalendar
           handleSchedule={handleSchedule}
-          handleToggleModal={() => setIsScheduling(prev => !prev)}
+          handleToggleModal={toggleModal} // Pasando la función del contexto
         />
       </Modal>
       <Modal
         visible={isDeleting}
         style={styles.modalContainer}
-        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.8)'}}>
+        backdropStyle={styles.backdrop}>
         <Layout
           style={[
             styles.modalContent,
             {
-              backgroundColor:
-                colorScheme === 'dark'
-                  ? theme['color-basic-800']
-                  : theme['color-basic-100'],
+              backgroundColor: theme['color-basic-100'],
             },
           ]}>
-          <Text
-            style={{
-              color: theme['color-basic-color'],
-              marginBottom: 12,
-              paddingHorizontal: 12,
-              textAlign: 'center',
-              fontSize: 16,
-              fontWeight: '800',
-            }}>
+          <Text style={styles.modalText}>
             ¿Estás seguro que deseas eliminar esta simulación?
           </Text>
-          <Layout style={{flexDirection: 'row', gap: 12}}>
-            <Button
-              onPress={handleModalDelete}
-              style={{marginTop: 36, flex: 1}}>
+          <Layout style={styles.modalButtons}>
+            <Button onPress={handleDelete} style={styles.modalButton}>
               Salir
             </Button>
             <Button
-              onPress={handleDelete}
-              style={{marginTop: 36, flex: 1, backgroundColor: '#DD4B39'}}>
+              onPress={() => setIsDeleting(true)}
+              style={[styles.modalButton, styles.deleteButton]}>
               Eliminar
             </Button>
           </Layout>
         </Layout>
       </Modal>
-      <ScrollView style={{width: '100%'}}>
-        <Text
-          style={{
-            fontSize: 16,
-            textAlign: 'center',
-            fontWeight: '800',
-            marginBottom: 16,
-          }}>
-          {simulation.nombre}
-        </Text>
+      <ScrollView style={styles.scrollView}>
+        <Text style={styles.title}>{simulation.nombre}</Text>
         <AmortizationTable
           data={simulation.data}
           simulationData={simulation.simulationData}
         />
       </ScrollView>
-      <Button style={styles.floatingButton} onPress={handleModalDelete}>
-        <MyIcon name="trash-2-outline" color="white" />
-      </Button>
-      <Button style={styles.floatingButtonSchedule} onPress={handleModal}>
+      <Button style={styles.floatingButtonSchedule} onPress={() => toggleModal}>
         <MyIcon name="calendar-outline" color="white" />
       </Button>
     </Layout>
@@ -162,7 +144,7 @@ const styles = StyleSheet.create({
   floatingButtonSchedule: {
     position: 'absolute',
     bottom: 20,
-    right: 80,
+    right: 20,
     padding: 10,
   },
   modalContainer: {
@@ -170,11 +152,41 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   modalContent: {
-    backgroundColor: 'white',
     paddingVertical: 20,
     paddingHorizontal: 12,
     width: '80%',
     alignSelf: 'center',
     borderRadius: 6,
+  },
+  modalText: {
+    color: '#000',
+    marginBottom: 12,
+    paddingHorizontal: 12,
+    textAlign: 'center',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  modalButton: {
+    marginTop: 36,
+    flex: 1,
+  },
+  deleteButton: {
+    backgroundColor: '#DD4B39',
+  },
+  scrollView: {
+    width: '100%',
+  },
+  title: {
+    fontSize: 16,
+    textAlign: 'center',
+    fontWeight: '800',
+    marginBottom: 16,
+  },
+  backdrop: {
+    backgroundColor: 'rgba(0, 0, 0, 0.8)',
   },
 });

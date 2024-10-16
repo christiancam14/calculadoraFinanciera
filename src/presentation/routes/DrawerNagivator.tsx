@@ -1,16 +1,18 @@
 import {createDrawerNavigator} from '@react-navigation/drawer';
-import {StackNavigator} from './StackNavigator';
+import {RootStackParams, StackNavigator} from './StackNavigator';
 import {useColorScheme} from 'react-native';
 import * as eva from '@eva-design/eva';
 import {HomeScreen} from '../screens/home/HomeScreen';
 import {ConversionScreen} from '../screens/conversion/ConversionScreen';
-import {useNavigation} from '@react-navigation/native';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {Button} from '@ui-kitten/components';
+import {MyIcon} from '../components/ui/MyIcon';
 
 const Drawer = createDrawerNavigator();
 
 export const DrawerNagivator = () => {
   const colorScheme = useColorScheme();
-  const navigation = useNavigation();
+  const navigation = useNavigation<NavigationProp<RootStackParams>>();
   // const navigationRef = useNavigationContainerRef();
 
   const theme = colorScheme === 'dark' ? eva.dark : eva.light;
@@ -42,8 +44,28 @@ export const DrawerNagivator = () => {
         options={() => ({
           title: 'Simulación',
           headerRight: () => {
-            console.log(navigation);
-            // Mostrar el botón solo si la ruta actual es SimulationScreen
+            const currentRoute = (navigation as any).getCurrentRoute();
+
+            console.log(currentRoute.name); // Esto debería funcionar sin problemas
+            if (currentRoute.name === 'SimulationDetails') {
+              return (
+                <Button
+                  style={{
+                    backgroundColor: 'transparent',
+                    borderColor: 'transparent',
+                  }}
+                  onPress={() => {
+                    // Asegúrate de pasar el objeto simulation
+                    navigation.navigate('SimulationDetails', {
+                      simulation: currentRoute.params.simulation, // Debes pasar este objeto
+                      toggleModal: true, // También pasa toggleModal
+                    });
+                  }}>
+                  <MyIcon name="calendar-outline" color="white" />
+                </Button>
+              );
+            }
+
             return null; // No mostrar nada si no es la SimulationScreen
           },
         })}

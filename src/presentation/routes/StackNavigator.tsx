@@ -9,10 +9,13 @@ import {Simulation} from '../../core/entities/simulatorEntities';
 
 export type RootStackParams = {
   LoadingScreen: undefined;
-  SimulationScreen: {productId: string};
+  SimulationScreen: {
+    productId: string;
+    action: string;
+  };
   SimulationDetails: {
     simulation: Simulation;
-    onDelete: (simulationId: string) => void;
+    toggleModal?: boolean;
   };
 };
 
