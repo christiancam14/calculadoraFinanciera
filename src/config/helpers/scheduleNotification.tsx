@@ -34,7 +34,7 @@ export async function scheduleNotification({
         channelId: '7815696ecbf1c',
         importance: 4,
         category: AndroidCategory.REMINDER,
-        timestamp: Date.now(),
+        timestamp: timestamp,
         showTimestamp: true,
       },
     },

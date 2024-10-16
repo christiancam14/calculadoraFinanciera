@@ -24,62 +24,46 @@ import {calculateAmortizationEA} from '../../../config/helpers/calculateAmortiza
 import {calculateAmortizationMonthly} from '../../../config/helpers/calculateAmortizationMonthly';
 import {calculateAmortizationNominal} from '../../../config/helpers/calculateAmortizationNominal';
 
-export const HomeScreen = () => {
-  // const [amount, setAmount] = useState('');
-  const {value: amount, onChange: setAmount} = useCurrencyInput();
-  const [interest, setInterest] = useState('');
-  const [duration, setDuration] = useState('');
-  const [periodicity, setPeriodicity] = useState<Periodicity>('Mensual');
-  const [indexPeriodicity, setIndexPeriodicity] = useState<IndexPath>(
-    new IndexPath(0),
-  );
-  const [interestRate, setInterestRate] = useState<Interest>('Mensual');
-  const [indexInterest, setIndexInterest] = useState<IndexPath>(
-    new IndexPath(0),
-  );
+// Custom hook para el manejo de amortización
+const useAmortization = () => {
   const [amortizationData, setAmortizationData] = useState<AmortizationEntry[]>(
     [],
   );
+  const [dataSimulated, setDataSimulated] = useState<SimulationData>();
   const [isComputing, setIsComputing] = useState(false);
 
-  const [dataSimulated, setDataSimulated] = useState<SimulationData>();
-
-  const isValidForm =
-    interest.length > 0 && duration.length > 0 && periodicity.length > 0;
-
-  const handleCalculateAmortization = () => {
+  const calculate = (
+    amount: number,
+    interestRate: number,
+    duration: number,
+    periodicity: Periodicity,
+    rateType: Interest,
+  ) => {
     setIsComputing(true);
-
-    // Convertir valores de strings a números
-    const P0 = parseFloat(amount.replace(/,/g, '')); // Monto del crédito
-    const tasaInteres = parseFloat(interest) / 100; // Tasa de interés
-    const nPeriodos = parseInt(duration, 10); // Número de periodos del préstamo
-
     let entries;
 
-    // Calcular la amortización usando la función externa
-    switch (interestRate) {
+    switch (rateType) {
       case 'Mensual':
         entries = calculateAmortizationMonthly(
-          P0,
-          tasaInteres,
-          nPeriodos,
+          amount,
+          interestRate,
+          duration,
           periodicity,
         );
         break;
       case 'Efectivo Anual':
         entries = calculateAmortizationEA(
-          P0,
-          tasaInteres,
-          nPeriodos,
+          amount,
+          interestRate,
+          duration,
           periodicity,
         );
         break;
       case 'Nominal Anual':
         entries = calculateAmortizationNominal(
-          P0,
-          tasaInteres,
-          nPeriodos,
+          amount,
+          interestRate,
+          duration,
           periodicity,
         );
         break;
@@ -91,13 +75,43 @@ export const HomeScreen = () => {
 
     setAmortizationData(entries);
     setDataSimulated({
-      value: amount,
-      interest: interest,
-      duration: duration,
-      periodicity: periodicity,
-      interestRate: interestRate,
+      value: amount.toString(),
+      interest: interestRate.toString(),
+      duration: duration.toString(),
+      periodicity,
+      interestRate: rateType,
     });
     setIsComputing(false);
+  };
+
+  return {amortizationData, dataSimulated, isComputing, calculate};
+};
+
+export const HomeScreen = () => {
+  const {value: amount, onChange: setAmount} = useCurrencyInput();
+  const [interest, setInterest] = useState('');
+  const [duration, setDuration] = useState('');
+  const [periodicity, setPeriodicity] = useState<Periodicity>('Mensual');
+  const [indexPeriodicity, setIndexPeriodicity] = useState<IndexPath>(
+    new IndexPath(0),
+  );
+  const [interestRate, setInterestRate] = useState<Interest>('Mensual');
+  const [indexInterest, setIndexInterest] = useState<IndexPath>(
+    new IndexPath(0),
+  );
+
+  const isValidForm =
+    interest.length > 0 && duration.length > 0 && periodicity.length > 0;
+
+  const {amortizationData, dataSimulated, isComputing, calculate} =
+    useAmortization();
+
+  const handleCalculateAmortization = () => {
+    const P0 = parseFloat(amount.replace(/,/g, '')); // Monto del crédito
+    const tasaInteres = parseFloat(interest) / 100; // Tasa de interés
+    const nPeriodos = parseInt(duration, 10); // Número de periodos del préstamo
+
+    calculate(P0, tasaInteres, nPeriodos, periodicity, interestRate);
   };
 
   const renderOption = (title: string) => (
@@ -127,22 +141,22 @@ export const HomeScreen = () => {
           />
 
           <Text style={styles.label}>Tasa de Interés (%)</Text>
-          <View style={{display: 'flex', flexDirection: 'row', gap: 10}}>
+          <View style={{flexDirection: 'row', gap: 10}}>
             <View style={{flex: 4}}>
               <Select
                 selectedIndex={indexInterest}
                 value={interestRate}
                 onSelect={(index: IndexPath | IndexPath[]) => {
-                  let selectedIndex;
+                  let selectedIndex: IndexPath;
+
+                  // Maneja el caso cuando es un array de IndexPath[]
                   if (Array.isArray(index)) {
-                    // Maneja el caso cuando es un array de IndexPath[]
-                    selectedIndex = index[0];
-                    setIndexInterest(selectedIndex); // Solo selecciona el primero en caso de array
+                    selectedIndex = index[0]; // Selecciona el primer índice
                   } else {
-                    // Maneja el caso cuando es un solo IndexPath
-                    selectedIndex = index;
-                    setIndexInterest(selectedIndex);
+                    selectedIndex = index; // Es un solo IndexPath
                   }
+
+                  setIndexInterest(selectedIndex);
                   setInterestRate(InterestData[selectedIndex.row]);
                 }}
                 style={{marginBottom: 20}}>
@@ -161,22 +175,22 @@ export const HomeScreen = () => {
           </View>
 
           <Text style={styles.label}>Plazo del préstamo</Text>
-          <View style={{display: 'flex', flexDirection: 'row', gap: 10}}>
+          <View style={{flexDirection: 'row', gap: 10}}>
             <View style={{flex: 4}}>
               <Select
                 selectedIndex={indexPeriodicity}
                 value={periodicity}
                 onSelect={(index: IndexPath | IndexPath[]) => {
-                  let selectedIndex;
+                  let selectedIndex: IndexPath;
+
+                  // Maneja el caso cuando es un array de IndexPath[]
                   if (Array.isArray(index)) {
-                    // Maneja el caso cuando es un array de IndexPath[]
-                    selectedIndex = index[0];
-                    setIndexPeriodicity(selectedIndex); // Solo selecciona el primero en caso de array
+                    selectedIndex = index[0]; // Selecciona el primer índice
                   } else {
-                    // Maneja el caso cuando es un solo IndexPath
-                    selectedIndex = index;
-                    setIndexPeriodicity(selectedIndex);
+                    selectedIndex = index; // Es un solo IndexPath
                   }
+
+                  setIndexPeriodicity(selectedIndex);
                   setPeriodicity(PeriodicityData[selectedIndex.row]);
                 }}
                 style={{marginBottom: 20}}>
@@ -217,9 +231,6 @@ export const HomeScreen = () => {
 const styles = StyleSheet.create({
   label: {
     marginBottom: 4,
-  },
-  btnContainer: {
-    display: 'flex',
   },
   btnCalculate: {
     width: 210,

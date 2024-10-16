@@ -9,6 +9,7 @@ import {Button} from '@ui-kitten/components';
 import {MyIcon} from '../components/ui/MyIcon';
 import {useModal} from '../../core/providers/ModalProvider';
 import {NotificationsScreen} from '../screens/notification/NotificationsScreen';
+import {StoredDataScreen} from '../screens/db/dbScreen';
 
 const Drawer = createDrawerNavigator();
 
@@ -67,6 +68,7 @@ export const DrawerNagivator = () => {
       />
       <Drawer.Screen name="Conversion de tasas" component={ConversionScreen} />
       <Drawer.Screen name="Notificaciones" component={NotificationsScreen} />
+      <Drawer.Screen name="DB" component={StoredDataScreen} />
       {/* <Drawer.Screen name="SimulationDetails" component={StackNavigator} /> */}
     </Drawer.Navigator>
   );

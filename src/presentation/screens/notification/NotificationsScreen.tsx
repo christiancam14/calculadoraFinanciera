@@ -30,10 +30,9 @@ export const NotificationsScreen = () => {
         await notifee.getDisplayedNotifications();
       const mappedNotifications: Notification[] = allNotifications.map(
         notif => {
-          const date =
-            notif.notification && notif.date
-              ? new Date(notif.date)
-              : new Date(); // Maneja la fecha
+          const date = notif.date // Cambia esto a la propiedad correcta
+            ? new Date(notif.date) // Asegúrate de que esta propiedad tenga la fecha correcta
+            : new Date();
 
           return {
             id: notif.id || '',
@@ -95,6 +94,9 @@ export const NotificationsScreen = () => {
                   notification => notification.id !== notificationId,
                 ),
               );
+
+              // Cargar notificaciones nuevamente después de eliminar
+              await loadNotifications();
             } catch (error) {
               console.error('Error al eliminar la notificación:', error);
             }
@@ -163,13 +165,10 @@ export const NotificationsScreen = () => {
                       justifyContent: 'space-between',
                     }}>
                     <Layout style={{flex: 1}}>
-                      <Text category="s1">{notification.subtitle}</Text>
-                      {/* Mueve el subtítulo aquí */}
                       <Text>{notification.body}</Text>
                       <Text>
                         {notification.date.toLocaleDateString('es-ES')}
                       </Text>
-                      {/* Mostrar solo la fecha sin hora */}
                     </Layout>
                     <Button
                       onPress={() => deleteNotification(notification.id)}
