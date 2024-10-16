@@ -4,6 +4,7 @@ import {MMKV} from 'react-native-mmkv';
 const storage = new MMKV();
 
 interface ScheduledNotification {
+  simulationId: string;
   id: string;
   title: string;
   subtitle: string;

@@ -7,6 +7,12 @@ import {ModalCalendar} from '../../components/modalCalendar';
 import {useModal} from '../../../core/providers/ModalProvider';
 import {MyIcon} from '../../components/ui/MyIcon';
 import {scheduleNotification} from '../../../config/helpers/scheduleNotification';
+import {useEffect, useState} from 'react';
+import {
+  getScheduledNotifications,
+  saveScheduledNotifications,
+} from '../../../core/services/storeScheduledNotification ';
+import {ScheduledNotification} from '../../../core/entities/notificationEntities';
 
 type RootStackParamList = {
   SimulationDetails: {
@@ -33,7 +39,18 @@ export const SimulationDetails = ({route}: SimulationDetailsProps) => {
 
   const {isScheduling, toggleModal} = useModal(); // Uso del contexto
 
-  const scheduledNotificationIds = [];
+  const [scheduledNotifications, setScheduledNotifications] = useState<
+    ScheduledNotification[]
+  >([]); // Estado para las notificaciones
+
+  // Cargar notificaciones programadas al montar el componente
+  useEffect(() => {
+    const loadNotifications = async () => {
+      const notifications = await getScheduledNotifications();
+      setScheduledNotifications(notifications);
+    };
+    loadNotifications();
+  }, []);
 
   const handleSchedule = async (date: Date) => {
     const periodicity = simulation.simulationData.periodicity; // Usar la variable existente
@@ -56,6 +73,7 @@ export const SimulationDetails = ({route}: SimulationDetailsProps) => {
     };
 
     const reminderDates = calculateReminderDates(date, totalPeriods);
+    const newScheduledNotifications: ScheduledNotification[] = []; // Para almacenar las nuevas notificaciones
 
     // Programar las notificaciones
     for (const reminderDate of reminderDates) {
@@ -73,7 +91,18 @@ export const SimulationDetails = ({route}: SimulationDetailsProps) => {
               reminderDates.indexOf(reminderDate) + 1
             }`,
           });
-          scheduledNotificationIds.push(notificationId); // Guardar el ID
+
+          // Asegúrate de asignar el simulationId correcto aquí
+          newScheduledNotifications.push({
+            id: notificationId,
+            title: 'Título de la notificación', // Cambia esto según tu lógica
+            subtitle: 'Subtítulo de la notificación',
+            message: 'Mensaje de la notificación',
+            body: `Este es tu recordatorio para la cuota ${
+              reminderDates.indexOf(reminderDate) + 1
+            }`,
+            simulationId: simulation.id, // Asegúrate de que simulation.id contenga el ID correcto
+          });
           console.log(`Notificación programada para ${notificationDate}`);
         } catch (error) {
           console.error('Error programando la notificación:', error);
@@ -85,6 +114,13 @@ export const SimulationDetails = ({route}: SimulationDetailsProps) => {
       }
     }
 
+    // Guardar las nuevas notificaciones programadas
+    await saveScheduledNotifications([
+      ...scheduledNotifications,
+      ...newScheduledNotifications,
+    ]);
+
+    setScheduledNotifications(prev => [...prev, ...newScheduledNotifications]); // Actualizar el estado
     toggleModal(); // Cerrar el modal después de programar
   };
 

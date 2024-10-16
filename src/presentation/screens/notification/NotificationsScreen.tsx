@@ -10,6 +10,7 @@ interface Notification {
   title: string;
   message: string;
   body: string;
+  simulationId: string; // Asegúrate de que sea solo un string
 }
 
 export const NotificationsScreen = () => {
@@ -27,14 +28,24 @@ export const NotificationsScreen = () => {
           subtitle: notif.notification?.subtitle || 'Título no disponible',
           message: notif.notification?.body || 'Mensaje no disponible',
           body: notif.notification?.body || 'Cuerpo no disponible',
+          simulationId: String(
+            notif.notification?.data?.simulationId || 'default',
+          ), // Convertir a string
         }),
       );
 
-      // Cargar notificaciones programadas (esto es un ejemplo, depende de cómo las almacenes)
-      const scheduledNotifications = await getScheduledNotifications(); // Método que debes implementar
+      // Cargar notificaciones programadas
+      const scheduledNotifications = await getScheduledNotifications();
       const allLoadedNotifications = [
         ...mappedNotifications,
-        ...scheduledNotifications,
+        ...scheduledNotifications.map(notification => ({
+          id: notification.id || '',
+          title: notification.title || 'Título no disponible',
+          subtitle: notification.subtitle || 'Título no disponible',
+          message: notification.body || 'Mensaje no disponible',
+          body: notification.body || 'Cuerpo no disponible',
+          simulationId: String(notification.simulationId || 'default'), // Convertir a string
+        })),
       ];
 
       setNotifications(allLoadedNotifications);
@@ -76,25 +87,40 @@ export const NotificationsScreen = () => {
     loadNotifications(); // Cargar notificaciones al montar la pantalla
   }, []);
 
+  // Agrupar notificaciones por simulationId
+  const groupedNotifications = notifications.reduce((acc, notification) => {
+    const {simulationId} = notification;
+    if (!acc[simulationId]) {
+      acc[simulationId] = [];
+    }
+    acc[simulationId].push(notification);
+    return acc;
+  }, {} as Record<string, Notification[]>);
+
   return (
     <Layout style={{flex: 1, padding: 16}}>
       <ScrollView
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }>
-        {notifications.length === 0 ? (
+        {Object.keys(groupedNotifications).length === 0 ? (
           <Text>No hay notificaciones disponibles.</Text>
         ) : (
-          notifications.map(notification => (
-            <Layout key={notification.id} style={{marginVertical: 8}}>
-              <Text>{notification.subtitle}</Text>
-              <Text>{notification.body}</Text>
-              <Divider />
-              <Button
-                onPress={() => deleteNotification(notification.id)}
-                status="danger">
-                Eliminar
-              </Button>
+          Object.keys(groupedNotifications).map(simulationId => (
+            <Layout key={simulationId} style={{marginVertical: 8}}>
+              <Text category="h6">Simulación ID: {simulationId}</Text>
+              {groupedNotifications[simulationId].map(notification => (
+                <Layout key={notification.id} style={{marginVertical: 4}}>
+                  <Text>{notification.subtitle}</Text>
+                  <Text>{notification.body}</Text>
+                  <Divider />
+                  <Button
+                    onPress={() => deleteNotification(notification.id)}
+                    status="danger">
+                    Eliminar
+                  </Button>
+                </Layout>
+              ))}
             </Layout>
           ))
         )}

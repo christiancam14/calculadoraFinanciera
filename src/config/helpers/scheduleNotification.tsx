@@ -11,7 +11,8 @@ export async function scheduleNotification({
   date,
   notificationSubtitle = '¡A pagar!',
   notificationBody = '¡Es hora de tu evento!',
-}: Props) {
+}: Props): Promise<string> {
+  // Asegúrate de que la función retorne un string
   // Asegúrate de que la fecha sea válida
   const timestamp = date.getTime();
 
@@ -23,8 +24,8 @@ export async function scheduleNotification({
     sound: 'default',
   });
 
-  // Programa la notificación
-  await notifee.createTriggerNotification(
+  // Programa la notificación y captura el ID
+  const notificationId = await notifee.createTriggerNotification(
     {
       title: '&#128178; Tienes un pago hoy &#128178;',
       subtitle: notificationSubtitle,
@@ -42,6 +43,8 @@ export async function scheduleNotification({
       timestamp, // Usa la marca de tiempo para la fecha y hora que deseas
     },
   );
+
+  return notificationId; // Retorna el ID de la notificación programada
 }
 
 export const cancelNotification = async (notificationId: string) => {
