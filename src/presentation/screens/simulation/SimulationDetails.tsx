@@ -7,21 +7,17 @@ import {ModalCalendar} from '../../components/modalCalendar';
 import {useModal} from '../../../core/providers/ModalProvider';
 import {MyIcon} from '../../components/ui/MyIcon';
 import {scheduleNotification} from '../../../config/helpers/scheduleNotification';
-import {useEffect, useState} from 'react';
+import {useEffect, useState, useCallback} from 'react';
+
+import {ScheduledNotification} from '../../../core/entities/notificationEntities';
 import {
   getScheduledNotifications,
   saveScheduledNotifications,
-} from '../../../core/services/storeScheduledNotification ';
-import {ScheduledNotification} from '../../../core/entities/notificationEntities';
+} from '../../../core/services/storeScheduledNotification';
 
 type RootStackParamList = {
-  SimulationDetails: {
-    simulation: Simulation;
-  };
-  SimulationScreen: {
-    simulationId: string;
-    action: string;
-  };
+  SimulationDetails: {simulation: Simulation};
+  SimulationScreen: {simulationId: string; action: string};
 };
 
 type SimulationDetailsRouteProp = RouteProp<
@@ -34,16 +30,32 @@ type SimulationDetailsProps = {
   navigation: NavigationProp<RootStackParamList>;
 };
 
+const calculateReminderDates = (
+  initialDate: Date,
+  total: number,
+  periodicity: string,
+) => {
+  const reminderDates: Date[] = [];
+  for (let i = 0; i < total; i++) {
+    const nextDate = new Date(initialDate);
+    if (periodicity === 'Mensual') {
+      nextDate.setMonth(initialDate.getMonth() + i);
+    } else if (periodicity === 'Semanal') {
+      nextDate.setDate(initialDate.getDate() + i * 7);
+    }
+    reminderDates.push(nextDate);
+  }
+  return reminderDates;
+};
+
 export const SimulationDetails = ({route}: SimulationDetailsProps) => {
-  const {simulation} = route.params; // Obteniendo simulation del parámetro
-
-  const {isScheduling, toggleModal} = useModal(); // Uso del contexto
-
+  const {simulation} = route.params;
+  const {isScheduling, toggleModal} = useModal();
   const [scheduledNotifications, setScheduledNotifications] = useState<
     ScheduledNotification[]
-  >([]); // Estado para las notificaciones
+  >([]);
 
-  // Cargar notificaciones programadas al montar el componente
+  // Load scheduled notifications on component mount
   useEffect(() => {
     const loadNotifications = async () => {
       const notifications = await getScheduledNotifications();
@@ -52,76 +64,69 @@ export const SimulationDetails = ({route}: SimulationDetailsProps) => {
     loadNotifications();
   }, []);
 
-  const handleSchedule = async (date: Date) => {
-    const periodicity = simulation.simulationData.periodicity; // Usar la variable existente
-    const totalPeriods = simulation.data.length; // Total de cuotas
+  const handleSchedule = useCallback(
+    async (date: Date) => {
+      const {periodicity} = simulation.simulationData;
+      const totalPeriods = simulation.data.length;
 
-    // Función para calcular las fechas de recordatorio
-    const calculateReminderDates = (initialDate: Date, total: number) => {
-      const reminderDates = [];
-      for (let i = 0; i < total; i++) {
-        const nextDate = new Date(initialDate);
+      // Calcular las fechas de recordatorio correctamente
+      const reminderDates = calculateReminderDates(
+        date,
+        totalPeriods,
+        periodicity,
+      );
+      const newScheduledNotifications: ScheduledNotification[] = [];
 
-        if (periodicity === 'Mensual') {
-          nextDate.setMonth(initialDate.getMonth() + i);
-        } else if (periodicity === 'Semanal') {
-          nextDate.setDate(initialDate.getDate() + i * 7); // Sumar semanas
+      // Programar notificaciones
+      for (const reminderDate of reminderDates) {
+        const notificationDate = new Date(reminderDate);
+        notificationDate.setHours(8, 0, 0, 0); // Fijar la hora a las 8 AM
+
+        // Asegurarse de que la fecha de la notificación esté en el futuro
+        if (notificationDate > new Date()) {
+          try {
+            const notificationId = await scheduleNotification({
+              date: notificationDate,
+              notificationSubtitle: 'Recordatorio de Pago',
+              notificationBody: `Este es tu recordatorio para la cuota ${
+                reminderDates.indexOf(reminderDate) + 1
+              }`,
+            });
+
+            // Asegurarse de asignar la fecha correcta (notificationDate) a cada notificación
+            newScheduledNotifications.push({
+              id: notificationId,
+              title: 'Título de la notificación', // Cambia esto según tu lógica
+              subtitle: `${simulation.nombre}`,
+              message: 'Tienes un pago para hoy',
+              body: `Cuota #${reminderDates.indexOf(reminderDate) + 1}`,
+              simulationId: simulation.id,
+              date: notificationDate, // Asignar la fecha de la cuota, no la fecha de inicio
+            });
+            console.log(`Notificación programada para ${notificationDate}`);
+          } catch (error) {
+            console.error('Error programando la notificación:', error);
+          }
+        } else {
+          console.log(
+            `No se programará notificación para ${notificationDate}, ya ha pasado.`,
+          );
         }
-        reminderDates.push(nextDate);
       }
-      return reminderDates;
-    };
 
-    const reminderDates = calculateReminderDates(date, totalPeriods);
-    const newScheduledNotifications: ScheduledNotification[] = []; // Para almacenar las nuevas notificaciones
-
-    // Programar las notificaciones
-    for (const reminderDate of reminderDates) {
-      const notificationDate = new Date(reminderDate);
-      notificationDate.setHours(8, 0, 0, 0); // Establecer hora a las 8 AM
-
-      // Solo programar si la fecha de notificación es futura
-      const now = new Date();
-      if (notificationDate > now) {
-        try {
-          const notificationId = await scheduleNotification({
-            date: notificationDate,
-            notificationSubtitle: 'Recordatorio de Pago',
-            notificationBody: `Este es tu recordatorio para la cuota ${
-              reminderDates.indexOf(reminderDate) + 1
-            }`,
-          });
-
-          // Asegúrate de asignar el simulationId correcto aquí
-          newScheduledNotifications.push({
-            id: notificationId,
-            title: 'Título de la notificación', // Cambia esto según tu lógica
-            subtitle: `${simulation.nombre}`,
-            message: 'Tienes un pago para hoy',
-            body: `Cuota #${reminderDates.indexOf(reminderDate) + 1}`,
-            simulationId: simulation.id,
-            date: simulation.date,
-          });
-          console.log(`Notificación programada para ${notificationDate}`);
-        } catch (error) {
-          console.error('Error programando la notificación:', error);
-        }
-      } else {
-        console.log(
-          `No se programará notificación para ${notificationDate}, ya ha pasado.`,
-        );
-      }
-    }
-
-    // Guardar las nuevas notificaciones programadas
-    await saveScheduledNotifications([
-      ...scheduledNotifications,
-      ...newScheduledNotifications,
-    ]);
-
-    setScheduledNotifications(prev => [...prev, ...newScheduledNotifications]); // Actualizar el estado
-    toggleModal(); // Cerrar el modal después de programar
-  };
+      // Guardar las notificaciones programadas
+      await saveScheduledNotifications([
+        ...scheduledNotifications,
+        ...newScheduledNotifications,
+      ]);
+      setScheduledNotifications(prev => [
+        ...prev,
+        ...newScheduledNotifications,
+      ]);
+      toggleModal(); // Cerrar el modal después de programar
+    },
+    [simulation, scheduledNotifications, toggleModal],
+  );
 
   return (
     <Layout style={styles.container}>
@@ -131,7 +136,7 @@ export const SimulationDetails = ({route}: SimulationDetailsProps) => {
         backdropStyle={styles.backdrop}>
         <ModalCalendar
           handleSchedule={handleSchedule}
-          handleToggleModal={toggleModal} // Pasando la función del contexto
+          handleToggleModal={toggleModal}
         />
       </Modal>
       <ScrollView style={styles.scrollView}>
@@ -155,13 +160,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: 12,
   },
-  floatingButton: {
-    position: 'absolute',
-    backgroundColor: '#DD4B39',
-    bottom: 20,
-    right: 20,
-    padding: 10,
-  },
   floatingButtonSchedule: {
     position: 'absolute',
     bottom: 20,
@@ -171,32 +169,6 @@ const styles = StyleSheet.create({
   modalContainer: {
     width: '100%',
     alignSelf: 'center',
-  },
-  modalContent: {
-    paddingVertical: 20,
-    paddingHorizontal: 12,
-    width: '80%',
-    alignSelf: 'center',
-    borderRadius: 6,
-  },
-  modalText: {
-    color: '#000',
-    marginBottom: 12,
-    paddingHorizontal: 12,
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalButton: {
-    marginTop: 36,
-    flex: 1,
-  },
-  deleteButton: {
-    backgroundColor: '#DD4B39',
   },
   scrollView: {
     width: '100%',

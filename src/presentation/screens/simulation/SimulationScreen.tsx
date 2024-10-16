@@ -1,6 +1,6 @@
 import {StyleSheet, ScrollView, RefreshControl, Alert} from 'react-native';
 import {Button, Divider, Layout, Text} from '@ui-kitten/components';
-import {scheduleNotification} from '../../../config/helpers/scheduleNotification'; // Asegúrate de que cancelNotification esté exportado
+import {scheduleNotification} from '../../../config/helpers/scheduleNotification';
 import {useEffect, useState, Fragment} from 'react';
 import {Simulation} from '../../../core/entities/simulatorEntities';
 import {MMKV} from 'react-native-mmkv';
@@ -8,12 +8,13 @@ import {useIsFocused} from '@react-navigation/native';
 import {StackNavigationProp} from '@react-navigation/stack';
 import {RootStackParams} from '../../routes/StackNavigator';
 import {MyIcon} from '../../components/ui/MyIcon';
+
+import {DisplayedNotification} from '@notifee/react-native';
+import notifee from '@notifee/react-native';
 import {
   deleteScheduledNotification,
   getScheduledNotifications,
-} from '../../../core/services/storeScheduledNotification ';
-import {DisplayedNotification} from '@notifee/react-native';
-import notifee from '@notifee/react-native';
+} from '../../../core/services/storeScheduledNotification';
 
 type SimulationScreenNavigationProp = StackNavigationProp<
   RootStackParams,
@@ -31,22 +32,19 @@ interface Notification {
   message: string;
   body: string;
   date: Date;
-  simulationId: string; // Asegúrate de que sea solo un string
+  simulationId: string;
 }
 
 export const SimulationScreen = ({navigation}: Props) => {
   const isFocused = useIsFocused();
-  const storage = new MMKV(); // Crear la instancia de almacenamiento
+  const storage = new MMKV();
   const [notifications, setNotifications] = useState<Notification[]>([]);
-
   const [simulations, setSimulations] = useState<Simulation[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
   const handleScheduleNotification = async () => {
     try {
-      const scheduleDate = new Date();
-      scheduleDate.setSeconds(scheduleDate.getSeconds() + 5);
-
+      const scheduleDate = new Date(Date.now() + 5000); // Notificación en 5 segundos
       await scheduleNotification({
         date: scheduleDate,
         notificationSubtitle: 'Recordatorio',
@@ -70,38 +68,40 @@ export const SimulationScreen = ({navigation}: Props) => {
       const allNotifications: DisplayedNotification[] =
         await notifee.getDisplayedNotifications();
       const mappedNotifications: Notification[] = allNotifications.map(
-        notif => {
-          const date = notif.date // Cambia esto a la propiedad correcta
-            ? new Date(notif.date) // Asegúrate de que esta propiedad tenga la fecha correcta
-            : new Date();
-
-          return {
-            id: notif.id || '',
-            title: notif.notification?.title || 'Título no disponible',
-            subtitle: notif.notification?.subtitle || 'Título no disponible',
-            message: notif.notification?.body || 'Mensaje no disponible',
-            body: notif.notification?.body || 'Cuerpo no disponible',
-            date, // Usa la variable `date` aquí
-            simulationId: String(
-              notif.notification?.data?.simulationId || 'default',
-            ), // Convertir a string
-          };
-        },
+        notif => ({
+          id: notif.id || '',
+          title: notif.notification?.title || 'Título no disponible',
+          subtitle: notif.notification?.subtitle || 'Título no disponible',
+          message: notif.notification?.body || 'Mensaje no disponible',
+          body: notif.notification?.body || 'Cuerpo no disponible',
+          date: new Date(notif.date || Date.now()),
+          simulationId: String(
+            notif.notification?.data?.simulationId || 'default',
+          ),
+        }),
       );
 
-      // Cargar notificaciones programadas
       const scheduledNotifications = await getScheduledNotifications();
       const allLoadedNotifications = [
         ...mappedNotifications,
-        ...scheduledNotifications.map(notification => ({
-          id: notification.id || '',
-          title: notification.title || 'Título no disponible',
-          subtitle: notification.subtitle || 'Título no disponible',
-          message: notification.body || 'Mensaje no disponible',
-          body: notification.body || 'Cuerpo no disponible',
-          date: new Date(notification.date), // Asegúrate de incluir la fecha
-          simulationId: String(notification.simulationId || 'default'), // Convertir a string
-        })),
+        ...scheduledNotifications.map(
+          (notification: {
+            id: any;
+            title: any;
+            subtitle: any;
+            body: any;
+            date: string | number | Date;
+            simulationId: any;
+          }) => ({
+            id: notification.id || '',
+            title: notification.title || 'Título no disponible',
+            subtitle: notification.subtitle || 'Título no disponible',
+            message: notification.body || 'Mensaje no disponible',
+            body: notification.body || 'Cuerpo no disponible',
+            date: new Date(notification.date),
+            simulationId: String(notification.simulationId || 'default'),
+          }),
+        ),
       ];
 
       setNotifications(allLoadedNotifications);
@@ -111,41 +111,29 @@ export const SimulationScreen = ({navigation}: Props) => {
   };
 
   const deleteSimulationById = async (simulationId: string) => {
-    // Actualiza las simulaciones
     setSimulations(prevSimulations => {
       const updatedSimulations = prevSimulations.filter(
         sim => sim.id !== simulationId,
       );
-
-      // Obtiene las notificaciones asociadas a la simulación
       const notificationsToDelete = notifications.filter(
         notification => notification.simulationId === simulationId,
       );
 
-      // Cancela y elimina las notificaciones asociadas
       const cancelPromises = notificationsToDelete.map(async notification => {
-        await notifee.cancelNotification(notification.id); // Cancelar notificación de Notifee
+        await notifee.cancelNotification(notification.id);
         console.log(
           `Notificación eliminada de Notifee con ID: ${notification.id}`,
         );
-        await deleteScheduledNotification(notification.id); // Aquí asumo que tienes una función similar para MMKV
+        await deleteScheduledNotification(notification.id);
       });
 
-      // Espera a que todas las notificaciones sean canceladas
       Promise.all(cancelPromises)
         .then(() => {
-          // Filtra las notificaciones que no están asociadas a la simulación eliminada
           const updatedNotifications = notifications.filter(
             notification => notification.simulationId !== simulationId,
           );
-
-          // Actualiza el almacenamiento con la nueva lista de simulaciones
           storage.set('simulations', JSON.stringify(updatedSimulations));
-
-          // Actualiza el almacenamiento con la nueva lista de notificaciones
           storage.set('notifications', JSON.stringify(updatedNotifications));
-
-          // Actualiza el estado de las notificaciones
           setNotifications(updatedNotifications);
         })
         .catch(error => {
@@ -164,18 +152,15 @@ export const SimulationScreen = ({navigation}: Props) => {
 
   useEffect(() => {
     if (isFocused) {
-      loadNotifications(); // Cargar notificaciones cada vez que la pantalla está enfocada
+      loadNotifications();
+      loadSimulations();
     }
   }, [isFocused]);
 
-  // Función para manejar las acciones (ver o eliminar)
   const handleAction = (action: 'view' | 'delete', simulation: Simulation) => {
     if (action === 'view') {
-      navigation.navigate('SimulationDetails', {
-        simulation: simulation,
-      });
+      navigation.navigate('SimulationDetails', {simulation});
     } else if (action === 'delete') {
-      // Confirmar antes de eliminar
       Alert.alert(
         'Eliminar Simulación',
         '¿Estás seguro de que quieres eliminar esta simulación?',
@@ -191,11 +176,6 @@ export const SimulationScreen = ({navigation}: Props) => {
       );
     }
   };
-
-  // Llamar la función para cargar las simulaciones cuando la pantalla está enfocada
-  useEffect(() => {
-    loadSimulations();
-  }, [isFocused]);
 
   return (
     <ScrollView
@@ -220,7 +200,7 @@ export const SimulationScreen = ({navigation}: Props) => {
                 <Layout
                   style={[
                     styles.tableRow,
-                    index % 2 === 0 ? null : styles.rowColor,
+                    index % 2 !== 0 ? styles.rowColor : null,
                   ]}>
                   <Text style={[styles.tableCell, {flex: 1}]}>
                     {sim.nombre}
@@ -228,14 +208,7 @@ export const SimulationScreen = ({navigation}: Props) => {
                   <Text style={[styles.tableCell, {flex: 1}]}>
                     {new Date(sim.date).toLocaleDateString()}
                   </Text>
-                  <Layout
-                    style={{
-                      display: 'flex',
-                      flexDirection: 'row',
-                      justifyContent: 'center',
-                      height: 'auto',
-                      flex: 1,
-                    }}>
+                  <Layout style={styles.actionsContainer}>
                     <Button
                       style={[styles.tableCell, {flex: 1, marginRight: 4}]}
                       size="tiny"
@@ -267,29 +240,9 @@ export const SimulationScreen = ({navigation}: Props) => {
 };
 
 const styles = StyleSheet.create({
-  modalContainer: {
-    width: '100%',
-    marginHorizontal: 'auto',
-    alignSelf: 'center',
-  },
   container: {
     padding: 20,
   },
-  modalContent: {
-    backgroundColor: 'white',
-    paddingVertical: 20,
-    paddingHorizontal: 12,
-    width: '80%',
-    alignSelf: 'center',
-    borderRadius: 6,
-  },
-  modalText: {
-    color: 'white',
-  },
-  contBtn: {
-    paddingVertical: 20,
-  },
-  btnGuardar: {width: 210, alignSelf: 'center'},
   tableContainer: {},
   header: {
     paddingVertical: 20,
@@ -301,10 +254,8 @@ const styles = StyleSheet.create({
   tableRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignContent: 'center',
+    alignItems: 'center',
     paddingVertical: 8,
-    display: 'flex',
-    gap: 4,
   },
   tableHeader: {
     fontWeight: 'bold',
@@ -315,5 +266,11 @@ const styles = StyleSheet.create({
     flex: 2,
     textAlign: 'center',
     alignSelf: 'center',
+  },
+  actionsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    height: 'auto',
+    flex: 1,
   },
 });

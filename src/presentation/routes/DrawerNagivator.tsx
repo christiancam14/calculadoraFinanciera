@@ -1,5 +1,5 @@
 import {createDrawerNavigator} from '@react-navigation/drawer';
-import {RootStackParams, StackNavigator} from './StackNavigator';
+import {StackNavigator} from './StackNavigator';
 import {useColorScheme} from 'react-native';
 import * as eva from '@eva-design/eva';
 import {HomeScreen} from '../screens/home/HomeScreen';
@@ -9,9 +9,13 @@ import {Button} from '@ui-kitten/components';
 import {MyIcon} from '../components/ui/MyIcon';
 import {useModal} from '../../core/providers/ModalProvider';
 import {NotificationsScreen} from '../screens/notification/NotificationsScreen';
-import {StoredDataScreen} from '../screens/db/dbScreen';
 
 const Drawer = createDrawerNavigator();
+
+export type RootStackParams = {
+  'Calculadora de créditos': undefined; // Asegúrate de que este tipo esté definido
+  // Otras rutas...
+};
 
 export const DrawerNagivator = () => {
   const colorScheme = useColorScheme();
@@ -61,6 +65,20 @@ export const DrawerNagivator = () => {
                   <MyIcon name="calendar-outline" color="white" />
                 </Button>
               );
+            } else if (currentRoute.name === 'SimulationScreen') {
+              return (
+                <Button
+                  style={{
+                    backgroundColor: 'transparent',
+                    borderColor: 'transparent',
+                  }}
+                  onPress={() =>
+                    navigation.navigate('Calculadora de créditos')
+                  }>
+                  {/* Llama a toggleModal aquí */}
+                  <MyIcon name="plus" color="white" />
+                </Button>
+              );
             }
             return null; // No mostrar nada si no es la SimulationScreen
           },
@@ -68,8 +86,7 @@ export const DrawerNagivator = () => {
       />
       <Drawer.Screen name="Conversion de tasas" component={ConversionScreen} />
       <Drawer.Screen name="Notificaciones" component={NotificationsScreen} />
-      <Drawer.Screen name="DB" component={StoredDataScreen} />
-      {/* <Drawer.Screen name="SimulationDetails" component={StackNavigator} /> */}
+      {/* <Drawer.Screen name="DB" component={StoredDataScreen} /> */}
     </Drawer.Navigator>
   );
 };
