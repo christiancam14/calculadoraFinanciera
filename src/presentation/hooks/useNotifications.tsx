@@ -13,7 +13,7 @@ interface Notification {
   simulationId: string;
 }
 
-export const useNotifications = (isFocused: boolean) => {
+export const useNotifications = (isFocused: boolean, simulationId?: string) => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -22,16 +22,23 @@ export const useNotifications = (isFocused: boolean) => {
     try {
       const allNotifications: DisplayedNotification[] =
         await notifee.getDisplayedNotifications();
+
       const mappedNotifications: Notification[] = allNotifications.map(
         notif => {
-          const date = notif.date ? new Date(notif.date) : new Date();
+          const scheduledTime = notif.notification?.data?.scheduledTime;
+          const displayDate =
+            typeof scheduledTime === 'string' ||
+            typeof scheduledTime === 'number'
+              ? new Date(scheduledTime)
+              : new Date();
+
           return {
             id: notif.id || '',
             title: notif.notification?.title || 'Título no disponible',
-            subtitle: notif.notification?.subtitle || 'Título no disponible',
+            subtitle: notif.notification?.subtitle || 'Subtítulo no disponible',
             message: notif.notification?.body || 'Mensaje no disponible',
             body: notif.notification?.body || 'Cuerpo no disponible',
-            date,
+            date: displayDate,
             simulationId: String(
               notif.notification?.data?.simulationId || 'default',
             ),
@@ -45,7 +52,7 @@ export const useNotifications = (isFocused: boolean) => {
         ...scheduledNotifications.map(notification => ({
           id: notification.id || '',
           title: notification.title || 'Título no disponible',
-          subtitle: notification.subtitle || 'Título no disponible',
+          subtitle: notification.subtitle || 'Subtítulo no disponible',
           message: notification.body || 'Mensaje no disponible',
           body: notification.body || 'Cuerpo no disponible',
           date: new Date(notification.date),
@@ -53,7 +60,14 @@ export const useNotifications = (isFocused: boolean) => {
         })),
       ];
 
-      setNotifications(allLoadedNotifications);
+      // Filtrar las notificaciones aquí si simulationId está definido
+      const filteredNotifications = simulationId
+        ? allLoadedNotifications.filter(
+            notification => notification.simulationId === simulationId,
+          )
+        : allLoadedNotifications; // Si no hay simulationId, mostrar todas las notificaciones
+
+      setNotifications(filteredNotifications);
     } catch (error) {
       console.error('Error al cargar notificaciones:', error);
     } finally {

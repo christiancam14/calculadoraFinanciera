@@ -1,12 +1,10 @@
-import React, {useEffect, useState, useMemo} from 'react';
+import React, {useState, useMemo} from 'react';
 import {ScrollView, RefreshControl, Alert} from 'react-native';
 import {Layout, Text, Button, Divider} from '@ui-kitten/components';
-import notifee, {DisplayedNotification} from '@notifee/react-native';
+import notifee from '@notifee/react-native';
 import {useIsFocused} from '@react-navigation/native';
-import {
-  deleteScheduledNotification,
-  getScheduledNotifications,
-} from '../../../core/services/storeScheduledNotification';
+import {deleteScheduledNotification} from '../../../core/services/storeScheduledNotification';
+import {useNotifications} from '../../hooks/useNotifications';
 
 interface Notification {
   subtitle: string;
@@ -17,71 +15,6 @@ interface Notification {
   date: Date;
   simulationId: string;
 }
-
-const useNotifications = (isFocused: boolean) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
-
-  const loadNotifications = async () => {
-    setLoading(true);
-    try {
-      const allNotifications: DisplayedNotification[] =
-        await notifee.getDisplayedNotifications();
-
-      const mappedNotifications: Notification[] = allNotifications.map(
-        notif => {
-          // Verificamos si scheduledTime es un string o un número antes de convertirlo a Date
-          const scheduledTime = notif.notification?.data?.scheduledTime;
-          const displayDate =
-            typeof scheduledTime === 'string' ||
-            typeof scheduledTime === 'number'
-              ? new Date(scheduledTime)
-              : new Date(); // Fallback a la fecha actual si no es válida
-
-          return {
-            id: notif.id || '',
-            title: notif.notification?.title || 'Título no disponible',
-            subtitle: notif.notification?.subtitle || 'Subtítulo no disponible',
-            message: notif.notification?.body || 'Mensaje no disponible',
-            body: notif.notification?.body || 'Cuerpo no disponible',
-            date: displayDate, // Usamos la fecha validada
-            simulationId: String(
-              notif.notification?.data?.simulationId || 'default',
-            ),
-          };
-        },
-      );
-
-      const scheduledNotifications = await getScheduledNotifications();
-      const allLoadedNotifications = [
-        ...mappedNotifications,
-        ...scheduledNotifications.map(notification => ({
-          id: notification.id || '',
-          title: notification.title || 'Título no disponible',
-          subtitle: notification.subtitle || 'Subtítulo no disponible',
-          message: notification.body || 'Mensaje no disponible',
-          body: notification.body || 'Cuerpo no disponible',
-          date: new Date(notification.date), // Asegúrate que esta fecha es la correcta
-          simulationId: String(notification.simulationId || 'default'),
-        })),
-      ];
-
-      setNotifications(allLoadedNotifications);
-    } catch (error) {
-      console.error('Error al cargar notificaciones:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    if (isFocused) {
-      loadNotifications();
-    }
-  }, [isFocused]);
-
-  return {notifications, loading, loadNotifications, setNotifications};
-};
 
 export const NotificationsScreen = () => {
   const [refreshing, setRefreshing] = useState(false);
@@ -155,6 +88,9 @@ export const NotificationsScreen = () => {
               <Layout key={simulationId} style={{marginVertical: 8}}>
                 <Text category="h6" style={{marginBottom: 8}}>
                   Simulación: {groupedNotifications[simulationId][0].subtitle}
+                </Text>
+                <Text category="h6" style={{marginBottom: 8}}>
+                  ID: {simulationId}
                 </Text>
                 {groupedNotifications[simulationId].map(notification => (
                   <Layout
