@@ -96,12 +96,11 @@ export const SimulationDetails = ({route}: SimulationDetailsProps) => {
           newScheduledNotifications.push({
             id: notificationId,
             title: 'Título de la notificación', // Cambia esto según tu lógica
-            subtitle: 'Subtítulo de la notificación',
-            message: 'Mensaje de la notificación',
-            body: `Este es tu recordatorio para la cuota ${
-              reminderDates.indexOf(reminderDate) + 1
-            }`,
-            simulationId: simulation.id, // Asegúrate de que simulation.id contenga el ID correcto
+            subtitle: `${simulation.nombre}`,
+            message: 'Tienes un pago para hoy',
+            body: `Cuota #${reminderDates.indexOf(reminderDate) + 1}`,
+            simulationId: simulation.id,
+            date: simulation.date,
           });
           console.log(`Notificación programada para ${notificationDate}`);
         } catch (error) {

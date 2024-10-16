@@ -4,5 +4,6 @@ export type ScheduledNotification = {
   subtitle: string;
   message: string;
   body: string;
+  date: Date;
   simulationId: string;
 };
