@@ -4,7 +4,11 @@ import {useColorScheme} from 'react-native';
 import * as eva from '@eva-design/eva';
 import {HomeScreen} from '../screens/home/HomeScreen';
 import {ConversionScreen} from '../screens/conversion/ConversionScreen';
-import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {
+  DrawerActions,
+  NavigationProp,
+  useNavigation,
+} from '@react-navigation/native';
 import {Button} from '@ui-kitten/components';
 import {MyIcon} from '../components/ui/MyIcon';
 import {useModal} from '../../core/providers/ModalProvider';
@@ -12,16 +16,16 @@ import {NotificationsScreen} from '../screens/notification/NotificationsScreen';
 
 const Drawer = createDrawerNavigator();
 
-export type RootStackParams = {
+export type RootStackParamsDrawer = {
   'Calculadora de créditos': undefined; // Asegúrate de que este tipo esté definido
+  StackNavigator: undefined;
   // Otras rutas...
 };
 
 export const DrawerNagivator = () => {
   const colorScheme = useColorScheme();
-  const navigation = useNavigation<NavigationProp<RootStackParams>>();
+  const navigation = useNavigation<NavigationProp<RootStackParamsDrawer>>();
   const {toggleModal} = useModal();
-  // const navigationRef = useNavigationContainerRef();
 
   const theme = colorScheme === 'dark' ? eva.dark : eva.light;
   const backgroundColor =
@@ -47,7 +51,7 @@ export const DrawerNagivator = () => {
       }}>
       <Drawer.Screen name="Calculadora de créditos" component={HomeScreen} />
       <Drawer.Screen
-        name="StackNavigator "
+        name="StackNavigator"
         component={StackNavigator}
         options={() => ({
           title: 'Créditos simulados',
@@ -81,6 +85,31 @@ export const DrawerNagivator = () => {
               );
             }
             return null; // No mostrar nada si no es la SimulationScreen
+          },
+          headerLeft: () => {
+            const currentRoute = (navigation as any).getCurrentRoute();
+            if (currentRoute.name === 'SimulationDetails') {
+              return (
+                <Button
+                  style={{
+                    backgroundColor: 'transparent',
+                    borderColor: 'transparent',
+                  }}
+                  onPress={() => navigation.goBack()}>
+                  <MyIcon name="arrow-back" color="white" />
+                </Button>
+              );
+            }
+            return (
+              <Button
+                style={{
+                  backgroundColor: 'transparent',
+                  borderColor: 'transparent',
+                }}
+                onPress={() => navigation.dispatch(DrawerActions.toggleDrawer)}>
+                <MyIcon name="menu" color="white" />
+              </Button>
+            );
           },
         })}
       />

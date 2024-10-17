@@ -15,6 +15,8 @@ import {
 import {formatAsCurrency} from '../../config/helpers/formatAsCurrency';
 import * as eva from '@eva-design/eva';
 import {MMKV} from 'react-native-mmkv';
+import {NavigationProp, useNavigation} from '@react-navigation/native';
+import {RootStackParamsDrawer} from '../routes/DrawerNagivator';
 
 interface SimulationData {
   value: string;
@@ -37,9 +39,8 @@ export const AmortizationTable = ({
 }: AmortizationTableProps) => {
   const [isSaving, setIsSaving] = useState(false);
   const [nombreSimulacion, setNombreSimulacion] = useState('');
-
   const storage = new MMKV();
-
+  const navigation = useNavigation<NavigationProp<RootStackParamsDrawer>>();
   const colorScheme = useColorScheme();
   const theme = colorScheme === 'dark' ? eva.dark : eva.light;
 
@@ -50,8 +51,6 @@ export const AmortizationTable = ({
       </Text>
     );
   }
-
-  console.log({data});
 
   const parseCurrency = (value: string) => {
     return parseFloat(value.replace(/[$,]/g, ''));
@@ -76,11 +75,10 @@ export const AmortizationTable = ({
 
   const handleModalSave = () => {
     // Lógica de guardado
-
-    setIsSaving(true);
+    setIsSaving(prev => !prev);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const simulationId = Date.now().toString(); // Genera un ID único usando la fecha actual
     const nuevaSimulacion: Simulation = {
       id: simulationId,
@@ -103,6 +101,7 @@ export const AmortizationTable = ({
 
     setIsSaving(false); // Cierra el modal después de guardar
     setNombreSimulacion(''); // Limpia el campo de nombre
+    navigation.navigate('StackNavigator');
   };
 
   return (
@@ -110,7 +109,8 @@ export const AmortizationTable = ({
       <Modal
         visible={isSaving}
         style={styles.modalContainer}
-        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.8)'}}>
+        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.8)'}}
+        onBackdropPress={handleModalSave}>
         <Layout
           style={[
             styles.modalContent,
