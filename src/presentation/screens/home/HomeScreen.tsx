@@ -20,6 +20,7 @@ import {
 import {AmortizationTable} from '../../components/Amortizationtable';
 import {formatAsCurrency} from '../../../config/helpers/formatAsCurrency';
 import {useAmortization} from '../../hooks/useAmortization';
+import {calculatePayment} from '../../../config/helpers/calculatePayment';
 
 export const HomeScreen = () => {
   const {value: amount, onChange: setAmount} = useCurrencyInput();
@@ -51,56 +52,15 @@ export const HomeScreen = () => {
     calculate(P0, tasaInteres, nPeriodos, periodicity, interestRate);
   };
 
-  const calculatePayment = () => {
-    const P0 = parseFloat(amount.replace(/,/g, '')); // Monto del préstamo
-    const tasaInteresMensual = parseFloat(interest) / 100; // Tasa de interés mensual en decimal
-    const nPeriodos = parseInt(duration, 10); // Número de períodos
-
-    if (!isNaN(P0) && !isNaN(tasaInteresMensual) && !isNaN(nPeriodos)) {
-      let tasaPorPeriodo = 0; // Tasa ajustada por periodo
-      let numCuotas = nPeriodos; // Número de pagos ajustados
-
-      // Ajustar tasa y número de periodos según la periodicidad seleccionada
-      switch (periodicity) {
-        case 'Diaria':
-          tasaPorPeriodo = Math.pow(1 + tasaInteresMensual, 1 / 30) - 1; // Tasa diaria
-          numCuotas = nPeriodos; // Duración en días
-          break;
-        case 'Semanal':
-          tasaPorPeriodo = Math.pow(1 + tasaInteresMensual, 1 / 4) - 1; // Tasa semanal
-          numCuotas = nPeriodos; // Duración en semanas
-          break;
-        case 'Quincenal':
-          tasaPorPeriodo = Math.pow(1 + tasaInteresMensual, 1 / 2) - 1; // Tasa quincenal
-          numCuotas = nPeriodos * 2; // Ajuste de duración en quincenas
-          break;
-        case 'Mensual':
-          tasaPorPeriodo = tasaInteresMensual; // Usar tasa mensual directamente
-          numCuotas = nPeriodos; // Duración en meses
-          break;
-        case 'Anual':
-          tasaPorPeriodo = Math.pow(1 + tasaInteresMensual, 12) - 1; // Tasa anual
-          numCuotas = nPeriodos / 12; // Duración en años
-          break;
-        default:
-          console.error('Periodicidad no válida');
-          return;
-      }
-
-      // Aplicar fórmula de cálculo de pago usando la fórmula de anualidades
-      // C = (P * r) / (1 - (1 + r)^-n)
-      const C =
-        (P0 * tasaPorPeriodo) / (1 - Math.pow(1 + tasaPorPeriodo, -numCuotas));
-
-      // Asignar el valor calculado a la variable que almacena el pago
-      setMonthlyPayment(parseFloat(C.toFixed(2))); // Redondear a 2 decimales
-    } else {
-      setMonthlyPayment(null);
-    }
-  };
-
   useEffect(() => {
-    calculatePayment();
+    const payment = calculatePayment(
+      amount,
+      interest,
+      duration,
+      periodicity,
+      interestRate,
+    );
+    setMonthlyPayment(payment);
   }, [amount, interest, duration, interestRate, periodicity]);
 
   const renderOption = (title: string) => (
