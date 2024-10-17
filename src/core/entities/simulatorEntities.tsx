@@ -23,10 +23,10 @@ export const InterestData: Interest[] = [
 
 export interface AmortizationEntry {
   periodo: number; // El número del periodo (por ejemplo, el mes o año correspondiente)
-  principal: string; // Cantidad de dinero destinada a reducir el capital del préstamo
-  interes: string; // Cantidad de dinero pagada en concepto de intereses en el periodo
-  saldo: string; // El saldo restante del préstamo después del pago
-  cuota: string; // El valor total del pago (cuota) en ese periodo
+  principal: number; // Cantidad de dinero destinada a reducir el capital del préstamo
+  interes: number; // Cantidad de dinero pagada en concepto de intereses en el periodo
+  saldo: number; // El saldo restante del préstamo después del pago
+  cuota: number; // El valor total del pago (cuota) en ese periodo
 }
 
 export interface SimulationData {

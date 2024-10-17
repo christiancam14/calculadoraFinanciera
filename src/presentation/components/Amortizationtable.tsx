@@ -51,6 +51,8 @@ export const AmortizationTable = ({
     );
   }
 
+  console.log({data});
+
   const parseCurrency = (value: string) => {
     return parseFloat(value.replace(/[$,]/g, ''));
   };
@@ -153,7 +155,9 @@ export const AmortizationTable = ({
           </Text>
         </Layout>
         <Layout style={{display: 'flex', flexDirection: 'row'}}>
-          <Text style={{flex: 1}}>Interes: {simulationData.interest!}%</Text>
+          <Text style={{flex: 1}}>
+            Interes: {(parseFloat(simulationData.interest) * 100).toFixed(2)!}%
+          </Text>
           <Text style={{flex: 1}}>{simulationData.interestRate!}</Text>
         </Layout>
         <Layout
@@ -180,10 +184,14 @@ export const AmortizationTable = ({
               ]}>
               <Text style={styles.tableCell}>{item.periodo}</Text>
               <Text style={[styles.tableCell, {flex: 4}]}>
-                {item.principal}
+                {formatAsCurrency(item.principal)}
               </Text>
-              <Text style={[styles.tableCell, {flex: 4}]}>{item.interes}</Text>
-              <Text style={[styles.tableCell, {flex: 4}]}>{item.saldo}</Text>
+              <Text style={[styles.tableCell, {flex: 4}]}>
+                {formatAsCurrency(item.interes)}
+              </Text>
+              <Text style={[styles.tableCell, {flex: 4}]}>
+                {formatAsCurrency(item.saldo)}
+              </Text>
             </Layout>
             <Divider />
           </React.Fragment>

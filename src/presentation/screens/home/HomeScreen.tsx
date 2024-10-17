@@ -12,81 +12,14 @@ import {useState, useEffect} from 'react';
 import {ScrollView, StyleSheet, View} from 'react-native';
 import {useCurrencyInput} from '../../hooks/useCurrencyInput';
 import {
-  AmortizationEntry,
   Interest,
   InterestData,
   Periodicity,
   PeriodicityData,
-  SimulationData,
 } from '../../../core/entities/simulatorEntities';
-import {calculateAmortizationEA} from '../../../config/helpers/calculateAmortizationEA';
-import {calculateAmortizationMonthly} from '../../../config/helpers/calculateAmortizationMonthly';
-import {calculateAmortizationNominal} from '../../../config/helpers/calculateAmortizationNominal';
 import {AmortizationTable} from '../../components/Amortizationtable';
 import {formatAsCurrency} from '../../../config/helpers/formatAsCurrency';
-
-// Custom hook para el manejo de amortización
-const useAmortization = () => {
-  const [amortizationData, setAmortizationData] = useState<AmortizationEntry[]>(
-    [],
-  );
-  const [dataSimulated, setDataSimulated] = useState<SimulationData>();
-  const [isComputing, setIsComputing] = useState(false);
-
-  const calculate = (
-    amount: number,
-    interestRate: number,
-    duration: number,
-    periodicity: Periodicity,
-    rateType: Interest,
-  ) => {
-    setIsComputing(true);
-    let entries;
-
-    switch (rateType) {
-      case 'Mensual':
-        entries = calculateAmortizationMonthly(
-          amount,
-          interestRate,
-          duration,
-          periodicity,
-        );
-        break;
-      case 'Efectivo Anual':
-        entries = calculateAmortizationEA(
-          amount,
-          interestRate,
-          duration,
-          periodicity,
-        );
-        break;
-      case 'Nominal Anual':
-        entries = calculateAmortizationNominal(
-          amount,
-          interestRate,
-          duration,
-          periodicity,
-        );
-        break;
-      default:
-        console.error('Tipo de interés no válido');
-        setIsComputing(false);
-        return;
-    }
-
-    setAmortizationData(entries);
-    setDataSimulated({
-      value: amount.toString(),
-      interest: interestRate.toString(),
-      duration: duration.toString(),
-      periodicity,
-      interestRate: rateType,
-    });
-    setIsComputing(false);
-  };
-
-  return {amortizationData, dataSimulated, isComputing, calculate};
-};
+import {useAmortization} from '../../hooks/useAmortization';
 
 export const HomeScreen = () => {
   const {value: amount, onChange: setAmount} = useCurrencyInput();
@@ -107,7 +40,7 @@ export const HomeScreen = () => {
   const isValidForm =
     interest.length > 0 && duration.length > 0 && periodicity.length > 0;
 
-  const {amortizationData, dataSimulated, isComputing, calculate} =
+  const {amortizationData, simulationData, isComputing, calculate} =
     useAmortization();
 
   const handleCalculateAmortization = () => {
@@ -283,11 +216,11 @@ export const HomeScreen = () => {
 
           <View style={{height: 20}} />
 
-          {dataSimulated && (
+          {simulationData && (
             <AmortizationTable
               data={amortizationData}
               isNew={false}
-              simulationData={dataSimulated}
+              simulationData={simulationData}
             />
           )}
         </View>
