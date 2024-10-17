@@ -8,34 +8,87 @@ import {
   Spinner,
   Text,
 } from '@ui-kitten/components';
-import {useState} from 'react';
+import {useState, useEffect} from 'react';
 import {ScrollView, StyleSheet, View} from 'react-native';
-import {AmortizationTable} from '../../components/Amortizationtable';
 import {useCurrencyInput} from '../../hooks/useCurrencyInput';
+import {
+  AmortizationEntry,
+  Interest,
+  InterestData,
+  Periodicity,
+  PeriodicityData,
+  SimulationData,
+} from '../../../core/entities/simulatorEntities';
+import {calculateAmortizationEA} from '../../../config/helpers/calculateAmortizationEA';
+import {calculateAmortizationMonthly} from '../../../config/helpers/calculateAmortizationMonthly';
+import {calculateAmortizationNominal} from '../../../config/helpers/calculateAmortizationNominal';
+import {AmortizationTable} from '../../components/Amortizationtable';
+import {formatAsCurrency} from '../../../config/helpers/formatAsCurrency';
 
-type Periodicity = 'Diaria' | 'Semanal' | 'Quincenal' | 'Mensual' | 'Anual';
+// Custom hook para el manejo de amortización
+const useAmortization = () => {
+  const [amortizationData, setAmortizationData] = useState<AmortizationEntry[]>(
+    [],
+  );
+  const [dataSimulated, setDataSimulated] = useState<SimulationData>();
+  const [isComputing, setIsComputing] = useState(false);
 
-const PeriodicityData: Periodicity[] = [
-  'Diaria',
-  'Semanal',
-  'Quincenal',
-  'Mensual',
-  'Anual',
-];
+  const calculate = (
+    amount: number,
+    interestRate: number,
+    duration: number,
+    periodicity: Periodicity,
+    rateType: Interest,
+  ) => {
+    setIsComputing(true);
+    let entries;
 
-type Interest = 'Mensual' | 'Efectivo Anual' | 'Nominal Anual';
+    switch (rateType) {
+      case 'Mensual':
+        entries = calculateAmortizationMonthly(
+          amount,
+          interestRate,
+          duration,
+          periodicity,
+        );
+        break;
+      case 'Efectivo Anual':
+        entries = calculateAmortizationEA(
+          amount,
+          interestRate,
+          duration,
+          periodicity,
+        );
+        break;
+      case 'Nominal Anual':
+        entries = calculateAmortizationNominal(
+          amount,
+          interestRate,
+          duration,
+          periodicity,
+        );
+        break;
+      default:
+        console.error('Tipo de interés no válido');
+        setIsComputing(false);
+        return;
+    }
 
-const InterestData: Interest[] = ['Mensual', 'Efectivo Anual', 'Nominal Anual'];
+    setAmortizationData(entries);
+    setDataSimulated({
+      value: amount.toString(),
+      interest: interestRate.toString(),
+      duration: duration.toString(),
+      periodicity,
+      interestRate: rateType,
+    });
+    setIsComputing(false);
+  };
 
-interface AmortizationEntry {
-  period: number;
-  principal: string;
-  interest: string;
-  balance: string;
-}
+  return {amortizationData, dataSimulated, isComputing, calculate};
+};
 
 export const HomeScreen = () => {
-  // const [amount, setAmount] = useState('');
   const {value: amount, onChange: setAmount} = useCurrencyInput();
   const [interest, setInterest] = useState('');
   const [duration, setDuration] = useState('');
@@ -47,187 +100,207 @@ export const HomeScreen = () => {
   const [indexInterest, setIndexInterest] = useState<IndexPath>(
     new IndexPath(0),
   );
-  const [amortizationData, setAmortizationData] = useState<AmortizationEntry[]>(
-    [],
-  );
-  const [isComputing, setIsComputing] = useState(false);
 
-  const calculateAmortization = () => {
-    setIsComputing(true);
+  // Nuevo estado para la cuota calculada
+  const [monthlyPayment, setMonthlyPayment] = useState<number | null>(null);
 
-    // Convert inputs to numbers
-    const amountClean = amount.replace(/[,.]/g, '');
-    const P = parseFloat(amountClean);
-    const base = 1 + (parseFloat(interest) / 100);
-    const potencia = 1 / getPeriodsPerYear(periodicity);
-    const r = Math.pow(base, potencia);
-    const n = parseInt(duration, 10);
+  const isValidForm =
+    interest.length > 0 && duration.length > 0 && periodicity.length > 0;
 
-    // Calculate monthly payment
-    const C = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+  const {amortizationData, dataSimulated, isComputing, calculate} =
+    useAmortization();
 
-    console.log(getPeriodsPerYear(periodicity));
-    console.log({n, P, r, base, potencia, interest, amount});
+  const handleCalculateAmortization = () => {
+    const P0 = parseFloat(amount.replace(/,/g, '')); // Monto del crédito
+    const tasaInteres = parseFloat(interest) / 100; // Tasa de interés
+    const nPeriodos = parseInt(duration, 10); // Número de periodos del préstamo
 
-    // Initialize balance
-    let balance = P;
-    const amortizationEntries: AmortizationEntry[] = [];
-
-    // Generate amortization data
-    for (let i = 0; i < n; i++) {
-      const interestCalc = balance * r;
-      const principal = C - interestCalc;
-      balance -= principal;
-
-      amortizationEntries.push({
-        period: i + 1,
-        principal: principal.toFixed(2),
-        interest: interestCalc.toFixed(2),
-        balance: balance.toFixed(2),
-      });
-      // console.log({amortizationEntries});
-    }
-
-    // Update state with the complete amortization data
-    setAmortizationData(amortizationEntries);
-
-    setIsComputing(false);
+    calculate(P0, tasaInteres, nPeriodos, periodicity, interestRate);
   };
 
-  const getPeriodsPerYear = (periodicityUser: Periodicity) => {
-    switch (periodicityUser) {
-      case 'Diaria':
-        return 365;
-      case 'Semanal':
-        return 52;
-      case 'Quincenal':
-        return 26;
-      case 'Mensual':
-        return 12;
-      case 'Anual':
-        return 1;
-      default:
-        return 12;
-      /*
-       */
+  const calculatePayment = () => {
+    const P0 = parseFloat(amount.replace(/,/g, '')); // Monto del préstamo
+    const tasaInteresMensual = parseFloat(interest) / 100; // Tasa de interés mensual en decimal
+    const nPeriodos = parseInt(duration, 10); // Número de períodos
+
+    if (!isNaN(P0) && !isNaN(tasaInteresMensual) && !isNaN(nPeriodos)) {
+      let tasaPorPeriodo = 0; // Tasa ajustada por periodo
+      let numCuotas = nPeriodos; // Número de pagos ajustados
+
+      // Ajustar tasa y número de periodos según la periodicidad seleccionada
+      switch (periodicity) {
+        case 'Diaria':
+          tasaPorPeriodo = Math.pow(1 + tasaInteresMensual, 1 / 30) - 1; // Tasa diaria
+          numCuotas = nPeriodos; // Duración en días
+          break;
+        case 'Semanal':
+          tasaPorPeriodo = Math.pow(1 + tasaInteresMensual, 1 / 4) - 1; // Tasa semanal
+          numCuotas = nPeriodos; // Duración en semanas
+          break;
+        case 'Quincenal':
+          tasaPorPeriodo = Math.pow(1 + tasaInteresMensual, 1 / 2) - 1; // Tasa quincenal
+          numCuotas = nPeriodos * 2; // Ajuste de duración en quincenas
+          break;
+        case 'Mensual':
+          tasaPorPeriodo = tasaInteresMensual; // Usar tasa mensual directamente
+          numCuotas = nPeriodos; // Duración en meses
+          break;
+        case 'Anual':
+          tasaPorPeriodo = Math.pow(1 + tasaInteresMensual, 12) - 1; // Tasa anual
+          numCuotas = nPeriodos / 12; // Duración en años
+          break;
+        default:
+          console.error('Periodicidad no válida');
+          return;
+      }
+
+      // Aplicar fórmula de cálculo de pago usando la fórmula de anualidades
+      // C = (P * r) / (1 - (1 + r)^-n)
+      const C =
+        (P0 * tasaPorPeriodo) / (1 - Math.pow(1 + tasaPorPeriodo, -numCuotas));
+
+      // Asignar el valor calculado a la variable que almacena el pago
+      setMonthlyPayment(parseFloat(C.toFixed(2))); // Redondear a 2 decimales
+    } else {
+      setMonthlyPayment(null);
     }
   };
+
+  useEffect(() => {
+    calculatePayment();
+  }, [amount, interest, duration, interestRate, periodicity]);
 
   const renderOption = (title: string) => (
     <SelectItem key={title} title={title} />
   );
 
   return (
-    <ScrollView>
-      <Modal
-        visible={isComputing}
-        backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.8)'}}>
-        <Spinner status="info" size="large" />
-      </Modal>
-      <View style={{paddingVertical: 20, paddingHorizontal: 10}}>
-        <Text category="h5" style={{alignSelf: 'center', paddingBottom: 10}}>
-          Simulador de crédito
-        </Text>
-        <Text style={styles.label}>Monto del Crédito ($)</Text>
-        <Input
-          keyboardType="numeric"
-          placeholder="Ingresa el monto"
-          value={amount}
-          onChangeText={setAmount}
-          style={{borderBottomWidth: 1, marginBottom: 20}}
-        />
+    <>
+      <ScrollView keyboardShouldPersistTaps="always">
+        <Modal
+          visible={isComputing}
+          backdropStyle={{backgroundColor: 'rgba(0, 0, 0, 0.8)'}}>
+          <Spinner status="info" size="large" />
+        </Modal>
 
-        <Text style={styles.label}>Tasa de Interés (%)</Text>
-        <View style={{display: 'flex', flexDirection: 'row', gap: 10}}>
-          <View style={{flex: 4}}>
-            <Select
-              selectedIndex={indexInterest}
-              value={interestRate}
-              onSelect={(index: IndexPath | IndexPath[]) => {
-                let selectedIndex;
-                if (Array.isArray(index)) {
+        <View style={{paddingVertical: 20, paddingHorizontal: 10}}>
+          <Text category="h5" style={{alignSelf: 'center', paddingBottom: 10}}>
+            Simulador de crédito
+          </Text>
+          <Text style={styles.label}>Monto del Crédito ($)</Text>
+          <Input
+            keyboardType="numeric"
+            placeholder="Ingresa el monto"
+            value={amount}
+            onChangeText={setAmount}
+            style={{borderBottomWidth: 1, marginBottom: 20}}
+          />
+
+          <Text style={styles.label}>Tasa de Interés (%)</Text>
+          <View style={{flexDirection: 'row', gap: 10}}>
+            <View style={{flex: 4}}>
+              <Select
+                selectedIndex={indexInterest}
+                value={interestRate}
+                onSelect={(index: IndexPath | IndexPath[]) => {
+                  let selectedIndex: IndexPath;
+
                   // Maneja el caso cuando es un array de IndexPath[]
-                  selectedIndex = index[0];
-                  setIndexInterest(selectedIndex); // Solo selecciona el primero en caso de array
-                } else {
-                  // Maneja el caso cuando es un solo IndexPath
-                  selectedIndex = index;
+                  if (Array.isArray(index)) {
+                    selectedIndex = index[0]; // Selecciona el primer índice
+                  } else {
+                    selectedIndex = index; // Es un solo IndexPath
+                  }
+
                   setIndexInterest(selectedIndex);
-                }
-                setInterestRate(InterestData[selectedIndex.row]);
-              }}
-              style={{marginBottom: 20}}>
-              {InterestData.map(renderOption)}
-            </Select>
+                  setInterestRate(InterestData[selectedIndex.row]);
+                }}
+                style={{marginBottom: 20}}>
+                {InterestData.map(renderOption)}
+              </Select>
+            </View>
+            <View style={{flex: 5}}>
+              <Input
+                keyboardType="numeric"
+                placeholder="Interés %"
+                value={interest}
+                onChangeText={setInterest}
+                style={{borderBottomWidth: 1, marginBottom: 20}}
+              />
+            </View>
           </View>
-          <View style={{flex: 5}}>
-            <Input
-              keyboardType="numeric"
-              placeholder="Interés %"
-              value={interest}
-              onChangeText={setInterest}
-              style={{borderBottomWidth: 1, marginBottom: 20}}
-            />
-          </View>
-        </View>
 
-        <Text style={styles.label}>Plazo del préstamo</Text>
-        <View style={{display: 'flex', flexDirection: 'row', gap: 10}}>
-          <View style={{flex: 4}}>
-            <Select
-              selectedIndex={indexPeriodicity}
-              value={periodicity}
-              onSelect={(index: IndexPath | IndexPath[]) => {
-                let selectedIndex;
-                if (Array.isArray(index)) {
+          <Text style={styles.label}>Plazo del préstamo</Text>
+          <View style={{flexDirection: 'row', gap: 10}}>
+            <View style={{flex: 4}}>
+              <Select
+                selectedIndex={indexPeriodicity}
+                value={periodicity}
+                onSelect={(index: IndexPath | IndexPath[]) => {
+                  let selectedIndex: IndexPath;
+
                   // Maneja el caso cuando es un array de IndexPath[]
-                  selectedIndex = index[0];
-                  setIndexPeriodicity(selectedIndex); // Solo selecciona el primero en caso de array
-                } else {
-                  // Maneja el caso cuando es un solo IndexPath
-                  selectedIndex = index;
+                  if (Array.isArray(index)) {
+                    selectedIndex = index[0]; // Selecciona el primer índice
+                  } else {
+                    selectedIndex = index; // Es un solo IndexPath
+                  }
+
                   setIndexPeriodicity(selectedIndex);
-                }
-                setPeriodicity(PeriodicityData[selectedIndex.row]);
-              }}
-              style={{marginBottom: 20}}>
-              {PeriodicityData.map(renderOption)}
-            </Select>
+                  setPeriodicity(PeriodicityData[selectedIndex.row]);
+                }}
+                style={{marginBottom: 20}}>
+                {PeriodicityData.map(renderOption)}
+              </Select>
+            </View>
+            <View style={{flex: 5}}>
+              <Input
+                keyboardType="numeric"
+                placeholder="Duración"
+                value={duration}
+                onChangeText={setDuration}
+                style={{borderBottomWidth: 1, marginBottom: 20}}
+              />
+            </View>
           </View>
-          <View style={{flex: 5}}>
-            <Input
-              keyboardType="numeric"
-              placeholder="Duración"
-              value={duration}
-              onChangeText={setDuration}
-              style={{borderBottomWidth: 1, marginBottom: 20}}
+
+          {/* Mostrar la cuota calculada */}
+          <Text style={[styles.label, {textAlign: 'center', fontSize: 16}]}>
+            Cuota Aproximada:
+          </Text>
+          <Text style={[styles.label, {textAlign: 'center', fontSize: 20}]}>
+            {monthlyPayment
+              ? `${formatAsCurrency(monthlyPayment)}`
+              : 'Ingrese los datos'}
+          </Text>
+
+          <Button
+            style={styles.btnCalculate}
+            disabled={!isValidForm}
+            onPress={handleCalculateAmortization}>
+            Calcular Amortización
+          </Button>
+
+          <View style={{height: 20}} />
+
+          {dataSimulated && (
+            <AmortizationTable
+              data={amortizationData}
+              isNew={false}
+              simulationData={dataSimulated}
             />
-          </View>
+          )}
         </View>
-        <Button
-          style={styles.btnCalculate}
-          disabled={isComputing}
-          onPress={calculateAmortization}>
-          Calcular Amortización
-        </Button>
-
-        <View style={{height: 20}} />
-
-        <AmortizationTable data={amortizationData} />
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </>
   );
 };
 
 const styles = StyleSheet.create({
   label: {
-    marginBottom: 4,
-  },
-  btnContainer: {
-    display: 'flex',
+    marginBottom: 5,
   },
   btnCalculate: {
-    width: 210,
-    alignSelf: 'center',
+    marginTop: 20,
   },
 });

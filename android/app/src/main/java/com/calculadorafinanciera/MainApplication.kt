@@ -1,4 +1,4 @@
-package com.calculadorafinanciera
+package com.SimFin
 
 import android.app.Application
 import com.facebook.react.PackageList
